@@ -15,11 +15,17 @@ interface ReviewUser {
 
 interface Review {
   _id: string;
-  userId: ReviewUser;
+  userId: ReviewUser | null;
   packageId: string;
   rating: number;
   comment: string;
   createdAt: string;
+}
+
+function getReviewUserId(review: Review): string | undefined {
+  const userId = review.userId;
+  if (!userId) return undefined;
+  return typeof userId === "object" ? String(userId._id) : String(userId);
 }
 
 interface PackageReviewsProps {
@@ -91,7 +97,8 @@ export default function PackageReviews({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${packageId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reviews/${packageId}`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +123,9 @@ export default function PackageReviews({
       
       // Update reviews list: replace if user already reviewed, or prepend
       setReviews((prevReviews) => {
-        const index = prevReviews.findIndex((r) => r.userId._id === user?.id);
+        const index = prevReviews.findIndex(
+          (r) => getReviewUserId(r) === user?.id
+        );
         if (index > -1) {
           const newReviews = [...prevReviews];
           newReviews[index] = updatedReview;

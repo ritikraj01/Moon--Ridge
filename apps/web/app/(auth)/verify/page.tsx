@@ -20,15 +20,18 @@ export default function VerifyPage() {
         const user = await completeMagicLink(window.location.href);
         if (user) {
           const token = await user.getIdToken();
-          
-          const response = await axios.post("http://localhost:5000/api/auth/firebase", {
-            idToken: token,
-            provider: 'email'
-          });
-          
+
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/firebase`,
+            {
+              idToken: token,
+              provider: 'email'
+            }
+          );
+
           setAuth(response.data.user, response.data.token);
           setStatus("success");
-          
+
           setTimeout(() => {
             router.push("/");
           }, 1500);
@@ -50,7 +53,7 @@ export default function VerifyPage() {
       {/* Background Gradients */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[150px]" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm p-8 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-10 text-center"
@@ -64,7 +67,7 @@ export default function VerifyPage() {
         )}
 
         {status === "success" && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center space-y-6"
@@ -76,7 +79,7 @@ export default function VerifyPage() {
         )}
 
         {status === "error" && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center space-y-6"
@@ -84,7 +87,7 @@ export default function VerifyPage() {
             <XCircle className="w-16 h-16 text-red-500" />
             <h2 className="text-xl font-medium text-white">Verification Failed</h2>
             <p className="text-sm text-zinc-400">{errorMessage}</p>
-            <button 
+            <button
               onClick={() => router.push("/login")}
               className="mt-4 px-6 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-zinc-200 transition-colors"
             >

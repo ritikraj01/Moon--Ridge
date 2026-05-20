@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,6 +73,7 @@ const INITIAL_FORM: FormState = {
 
 export default function AddPackageModal() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
@@ -96,7 +97,11 @@ export default function AddPackageModal() {
 
   const { user, token } = useAuthStore();
 
-  if (user?.role !== "admin") return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || user?.role !== "admin") return null;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -186,13 +191,16 @@ export default function AddPackageModal() {
     formData.append("image", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/packages/upload", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
-        body: formData,
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/upload`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          },
+          body: formData,
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to upload image");
@@ -316,7 +324,7 @@ export default function AddPackageModal() {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/packages", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/packages`, { 
         method: "POST",
         headers: {
           "Content-Type": "application/json",

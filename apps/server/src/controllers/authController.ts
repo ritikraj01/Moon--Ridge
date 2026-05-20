@@ -6,7 +6,7 @@ import admin from "../config/firebaseAdmin";
 export const firebaseAuth = async (req: Request, res: Response) => {
   try {
     const { idToken, provider } = req.body;
-    
+
     if (!idToken) {
       return res.status(400).json({ message: "No idToken provided" });
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2, AlertTriangle } from "lucide-react";
@@ -14,19 +14,24 @@ import {
 import { useAuthStore } from "@/lib/authStore";
 export default function DeletePackageButton({ pkgId, title }: { pkgId: string; title: string }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { user, token } = useAuthStore();
 
-  if (user?.role !== "admin") return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || user?.role !== "admin") return null;
 
   const handleDelete = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/packages/${pkgId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/${pkgId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

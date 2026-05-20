@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark"> 
       <body className={`${geist.className} antialiased bg-background text-foreground`}>
         <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 max-w-7xl mx-auto items-center justify-between px-4">
@@ -29,7 +29,6 @@ export default function RootLayout({
             </Link>
             <div className="hidden md:flex items-center gap-6 text-sm font-medium">
               <Link href="/packages" className="hover:text-amber-500 transition-colors">Destinations</Link>
-              <Link href="/packages" className="hover:text-amber-500 transition-colors">Tour Packages</Link>
               <Link href="/build-trip" className="hover:text-amber-500 transition-colors">Customize Trip</Link>
               <Link href="#" className="hover:text-amber-500 transition-colors">Blog</Link>
             </div>

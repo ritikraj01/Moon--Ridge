@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +61,7 @@ type FAQItem = {
 
 export default function EditPackageModal({ pkg }: { pkg: any }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   
@@ -116,7 +117,11 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
 
   const { user, token } = useAuthStore();
 
-  if (user?.role !== "admin") return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || user?.role !== "admin") return null;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -206,7 +211,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
     formData.append("image", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/packages/upload", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/upload`, {  
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -336,7 +341,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/api/packages/${pkg._id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/${pkg._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

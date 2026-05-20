@@ -24,10 +24,13 @@ export default function LoginPage() {
       const user = await signInWithGoogle();
       const token = await user.getIdToken();
       
-      const response = await axios.post("http://localhost:5000/api/auth/firebase", {
-        idToken: token,
-        provider: 'google'
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/firebase`,
+        {
+          idToken: token,
+          provider: "google"
+        }
+      );
       
       setAuth(response.data.user, response.data.token);
       router.push("/");
