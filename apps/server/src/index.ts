@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 dotenv.config(); // Must be called before any imports that use process.env
 
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import morgan from "morgan";
@@ -41,7 +41,7 @@ app.use("/api/packages", packageRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "OK", message: "Server is running smoothly" });
 });
 
