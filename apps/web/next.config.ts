@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const apiHostname = process.env.NEXT_PUBLIC_BASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_BASE_URL).hostname
+  : null;
+
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -19,7 +23,10 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "5000",
-      }
+      },
+      ...(apiHostname && apiHostname !== "localhost"
+        ? [{ protocol: "https" as const, hostname: apiHostname }]
+        : []),
     ],
   },
 };
