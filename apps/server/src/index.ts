@@ -14,6 +14,7 @@ import packageRoutes from "./routes/packageRoutes";
 // import bookingRoutes from "./routes/bookingRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import authRoutes from "./routes/authRoutes";
+import blogRoutes from "./routes/blogRoutes";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +41,7 @@ app.use("/api/packages", packageRoutes);
 // app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/blogs", blogRoutes);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "OK", message: "Server is running smoothly" });

@@ -4,11 +4,49 @@ import Review from "../models/Review";
 import cloudinary from "../config/cloudinary";
 import fs from "fs";
 import path from "path";
+import {
+  enrichPackageResponse,
+  getStartingOffer,
+  normalizeNumberOfPersons,
+  normalizePlansForStorage,
+  validatePlans,
+} from "../utils/packagePlans";
+
+function preparePackageBody(body: Record<string, unknown>) {
+  const plans = normalizePlansForStorage(
+    body.plans as Parameters<typeof normalizePlansForStorage>[0]
+  );
+  const planError = validatePlans(plans);
+  if (planError) {
+    return { error: planError as string };
+  }
+
+  const pricing = Number(body.pricing) || 0;
+  const numberOfPersons = normalizeNumberOfPersons(body.numberOfPersons);
+
+  if (pricing < 0) {
+    return { error: "Base package price must be zero or greater" };
+  }
+
+  const resolvedPricing =
+    plans.length > 0
+      ? getStartingOffer(pricing, plans, numberOfPersons).price
+      : pricing;
+
+  return {
+    ...body,
+    plans,
+    pricing: resolvedPricing,
+    numberOfPersons,
+  };
+}
 
 export const getPackages = async (req: Request, res: Response) => {
   try {
-    const packages = await Package.find();
-    res.json(packages);
+    const packages = await Package.find().lean();
+    res.json(
+      packages.map((pkg) => enrichPackageResponse(pkg as Record<string, unknown>))
+    );
   } catch (error) {
     res.status(500).json({ message: "Error fetching packages", error });
   }
@@ -16,14 +54,21 @@ export const getPackages = async (req: Request, res: Response) => {
 
 export const getPackageBySlug = async (req: Request, res: Response) => {
   try {
-    const pkg = await Package.findOne({ slug: req.params.slug });
+    const pkg = await Package.findOne({ slug: req.params.slug }).lean();
     if (!pkg) return res.status(404).json({ message: "Package not found" });
 
     const reviews = await Review.find({ packageId: pkg._id })
       .populate("userId", "name avatar")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
 
-    res.json({ ...pkg.toObject(), reviews });
+    res.json(
+      enrichPackageResponse({
+        ...(pkg as Record<string, unknown>),
+        reviews,
+      })
+    );
   } catch (error) {
     res.status(500).json({ message: "Error fetching package", error });
   }
@@ -31,9 +76,20 @@ export const getPackageBySlug = async (req: Request, res: Response) => {
 
 export const createPackage = async (req: Request, res: Response) => {
   try {
-    const newPackage = new Package(req.body);
+    const prepared = preparePackageBody(req.body);
+    if ("error" in prepared) {
+      return res.status(400).json({ message: prepared.error });
+    }
+
+    const newPackage = new Package(prepared);
     await newPackage.save();
-    res.status(201).json(newPackage);
+    res
+      .status(201)
+      .json(
+        enrichPackageResponse(
+          newPackage.toObject() as unknown as Record<string, unknown>
+        )
+      );
   } catch (error) {
     res.status(500).json({ message: "Error creating package", error });
   }
@@ -41,15 +97,24 @@ export const createPackage = async (req: Request, res: Response) => {
 
 export const updatePackage = async (req: Request, res: Response) => {
   try {
+    const prepared = preparePackageBody(req.body);
+    if ("error" in prepared) {
+      return res.status(400).json({ message: prepared.error });
+    }
+
     const updatedPackage = await Package.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      prepared,
       { new: true, runValidators: true }
     );
     if (!updatedPackage) {
       return res.status(404).json({ message: "Package not found" });
     }
-    res.json(updatedPackage);
+    res.json(
+      enrichPackageResponse(
+        updatedPackage.toObject() as unknown as Record<string, unknown>
+      )
+    );
   } catch (error) {
     res.status(500).json({ message: "Error updating package", error });
   }

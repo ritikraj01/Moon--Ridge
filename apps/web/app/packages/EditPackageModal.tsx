@@ -39,12 +39,14 @@ type FormState = {
   inclusions: string;
   exclusions: string;
   pricing: string;
+  numberOfPersons: string;
   availability: boolean;
 };
 
 type Plan = {
   name: string;
   price: string;
+  numberOfPersons: string;
   features: string;
 };
 
@@ -76,6 +78,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
     inclusions: pkg.inclusions?.join(", ") || "",
     exclusions: pkg.exclusions?.join(", ") || "",
     pricing: String(pkg.pricing || ""),
+    numberOfPersons: String(pkg.numberOfPersons ?? 1),
     availability: pkg.availability !== undefined ? pkg.availability : true,
   });
 
@@ -84,9 +87,10 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
       ? pkg.plans.map((p: any) => ({
           name: p.name || "",
           price: String(p.price || ""),
+          numberOfPersons: String(p.numberOfPersons ?? 1),
           features: p.features?.join(", ") || "",
         }))
-      : [{ name: "", price: "", features: "" }]
+      : [{ name: "", price: "", numberOfPersons: "2", features: "" }]
   );
 
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(
@@ -154,7 +158,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
       .filter(Boolean);
 
   const addPlan = () => {
-    setPlans([...plans, { name: "", price: "", features: "" }]);
+    setPlans([...plans, { name: "", price: "", numberOfPersons: "2", features: "" }]);
   };
 
   const removePlan = (index: number) => {
@@ -241,11 +245,23 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
     setLoading(true);
     setError(null);
 
+    const baseTravelers = Number(form.numberOfPersons);
+    if (!Number.isFinite(baseTravelers) || baseTravelers < 1) {
+      setError("Please enter a valid number of travelers for the base package");
+      setActiveTab("basic");
+      setLoading(false);
+      return;
+    }
+
     // Dynamic field validation
     for (let i = 0; i < plans.length; i++) {
       const plan = plans[i];
       if (!plan) continue;
-      if (plan.name.trim() !== "" || plan.price.trim() !== "") {
+      if (
+        plan.name.trim() !== "" ||
+        plan.price.trim() !== "" ||
+        plan.numberOfPersons.trim() !== ""
+      ) {
         if (!plan.name.trim()) {
           setError(`Please enter a name for Plan ${i + 1}`);
           setActiveTab("plans");
@@ -253,7 +269,14 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
           return;
         }
         if (!plan.price.trim()) {
-          setError(`Please enter a price for Plan ${i + 1}`);
+          setError(`Please enter a total package price for Plan ${i + 1}`);
+          setActiveTab("plans");
+          setLoading(false);
+          return;
+        }
+        const persons = Number(plan.numberOfPersons);
+        if (!Number.isFinite(persons) || persons < 1) {
+          setError(`Please enter a valid number of travelers for Plan ${i + 1}`);
           setActiveTab("plans");
           setLoading(false);
           return;
@@ -305,6 +328,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
       .map((p) => ({
         name: p.name.trim(),
         price: Number(p.price) || 0,
+        numberOfPersons: Math.max(1, Number(p.numberOfPersons) || 1),
         features: parseList(p.features),
       }));
 
@@ -333,6 +357,7 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
       inclusions: parseList(form.inclusions),
       exclusions: parseList(form.exclusions),
       pricing: Number(form.pricing),
+      numberOfPersons: Math.max(1, Number(form.numberOfPersons) || 1),
       availability: form.availability,
       plans: parsedPlans,
       itinerary: parsedItinerary,
@@ -532,10 +557,10 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="pricing" className="text-slate-300 font-medium">
-                      Base Price (₹) <span className="text-red-500">*</span>
+                      Base Package Price (₹) <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="pricing"
@@ -544,10 +569,32 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
                       min={0}
                       value={form.pricing}
                       onChange={handleChange}
-                      placeholder="e.g. 25000"
+                      placeholder="e.g. 55000"
                       className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus-visible:ring-amber-500 focus-visible:border-amber-500"
                       required
                     />
+                    <p className="text-[10px] text-slate-500">
+                      Total price when no tiered plans are added
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="numberOfPersons" className="text-slate-300 font-medium">
+                      Base Travelers <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="numberOfPersons"
+                      name="numberOfPersons"
+                      type="number"
+                      min={1}
+                      value={form.numberOfPersons}
+                      onChange={handleChange}
+                      placeholder="e.g. 2"
+                      className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus-visible:ring-amber-500 focus-visible:border-amber-500"
+                      required
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Travelers included in the base price
+                    </p>
                   </div>
                   <div className="space-y-1.5 flex flex-col justify-end">
                     <label className="flex items-center gap-3 cursor-pointer select-none bg-slate-900 border border-slate-800 rounded-lg p-3 hover:bg-slate-900/80 transition-all">
@@ -569,6 +616,23 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
                     </label>
                   </div>
                 </div>
+                {form.pricing.trim() && form.numberOfPersons.trim() && (
+                  <p className="text-xs text-amber-500/90 font-medium">
+                    Base package: ₹{Number(form.pricing).toLocaleString("en-IN")} for{" "}
+                    {form.numberOfPersons}{" "}
+                    {Number(form.numberOfPersons) === 1 ? "Traveler" : "Travelers"}
+                    {Number(form.numberOfPersons) > 0 && Number(form.pricing) > 0 && (
+                      <>
+                        {" "}
+                        · ₹
+                        {Math.round(
+                          Number(form.pricing) / Number(form.numberOfPersons)
+                        ).toLocaleString("en-IN")}{" "}
+                        / person
+                      </>
+                    )}
+                  </p>
+                )}
               </TabsContent>
 
               {/* 2. HIGHLIGHTS & INCLUSIONS */}
@@ -681,7 +745,9 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
                 <div className="flex justify-between items-center pb-2 border-b border-slate-905">
                   <div>
                     <h3 className="text-sm font-semibold text-amber-500">Custom Packages & Pricing Plans</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Offer different packages (e.g. Standard, Deluxe, Luxury)</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Each plan is a fixed total price for a set number of travelers
+                    </p>
                   </div>
                   <Button
                     type="button"
@@ -714,29 +780,65 @@ export default function EditPackageModal({ pkg }: { pkg: any }) {
                           <X size={14} />
                         </Button>
                         
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-slate-400">Plan Name</Label>
                             <Input
                               value={plan.name}
                               onChange={(e) => handlePlanChange(idx, "name", e.target.value)}
-                              placeholder="e.g. Luxury / Standard"
+                              placeholder="e.g. Budget / Standard"
                               className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-amber-500 focus-visible:border-amber-500 text-xs h-9"
                               required
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-slate-400">Price (₹)</Label>
+                            <Label className="text-xs font-semibold text-slate-400">
+                              Total Package Price (₹)
+                            </Label>
                             <Input
                               type="number"
+                              min={0}
                               value={plan.price}
                               onChange={(e) => handlePlanChange(idx, "price", e.target.value)}
-                              placeholder="e.g. 35000"
+                              placeholder="e.g. 55000"
+                              className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-amber-500 focus-visible:border-amber-500 text-xs h-9"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-400">
+                              Number of Travelers
+                            </Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={plan.numberOfPersons}
+                              onChange={(e) =>
+                                handlePlanChange(idx, "numberOfPersons", e.target.value)
+                              }
+                              placeholder="e.g. 2"
                               className="bg-slate-900 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-amber-500 focus-visible:border-amber-500 text-xs h-9"
                               required
                             />
                           </div>
                         </div>
+                        {plan.price.trim() && plan.numberOfPersons.trim() && (
+                          <p className="text-xs text-amber-500/90 font-medium">
+                            ₹{Number(plan.price).toLocaleString("en-IN")} for{" "}
+                            {plan.numberOfPersons}{" "}
+                            {Number(plan.numberOfPersons) === 1 ? "Traveler" : "Travelers"}
+                            {Number(plan.numberOfPersons) > 0 && Number(plan.price) > 0 && (
+                              <>
+                                {" "}
+                                · ₹
+                                {Math.round(
+                                  Number(plan.price) / Number(plan.numberOfPersons)
+                                ).toLocaleString("en-IN")}{" "}
+                                / person
+                              </>
+                            )}
+                          </p>
+                        )}
 
                         <div className="space-y-1.5">
                           <Label className="text-xs font-semibold text-slate-400">Inclusions & Features (comma-separated)</Label>

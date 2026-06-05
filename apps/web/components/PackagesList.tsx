@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Compass, RefreshCw, X } from "lucide-react";
+import {
+  formatPackagePrice,
+  formatTravelersLabel,
+  getStartingOffer,
+} from "@/lib/packagePricing";
 
 interface Package {
   _id: string;
@@ -15,6 +20,10 @@ interface Package {
   destination: string;
   duration: number;
   pricing: number;
+  numberOfPersons?: number;
+  plans?: { name: string; price: number; numberOfPersons?: number }[];
+  startingPrice?: number;
+  startingNumberOfPersons?: number;
   gallery?: string[];
   highlights?: string[];
   averageRating?: number;
@@ -27,7 +36,7 @@ interface PackagesListProps {
 
 export default function PackagesList({ initialPackages }: PackagesListProps) {
   const [search, setSearch] = useState("");
-  
+
   // Calculate max price from packages
   const absoluteMaxPrice = useMemo(() => {
     if (initialPackages.length === 0) return 100000;
@@ -43,7 +52,7 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
   const filteredPackages = useMemo(() => {
     return initialPackages.filter((pkg) => {
       // 1. Search filter
-      const matchesSearch = 
+      const matchesSearch =
         pkg.title.toLowerCase().includes(search.toLowerCase()) ||
         pkg.destination.toLowerCase().includes(search.toLowerCase());
 
@@ -82,8 +91,8 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-lg text-white">Filters</h3>
             {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={handleResetFilters}
                 className="text-xs text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 h-8 px-2.5 rounded-lg flex items-center gap-1 transition-all"
               >
@@ -99,11 +108,11 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
               <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block mb-2">Search Destination</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="e.g. Ladakh, Bali..." 
+                  placeholder="e.g. Ladakh, Bali..."
                   className="w-full bg-zinc-950 border border-white/10 hover:border-amber-500/30 focus:border-amber-500/50 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all duration-300"
                 />
               </div>
@@ -113,10 +122,10 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
             <div>
               <div className="flex justify-between items-baseline mb-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">Max Price</label>
-                <span className="text-sm font-bold text-amber-500">₹{priceRange.toLocaleString()}</span>
+                <span className="text-sm font-bold text-amber-500">₹{priceRange.toLocaleString('en-IN')}</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 min={0}
                 max={absoluteMaxPrice}
                 value={priceRange}
@@ -125,7 +134,7 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
               />
               <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
                 <span>₹0</span>
-                <span>₹{absoluteMaxPrice.toLocaleString()}</span>
+                <span>₹{absoluteMaxPrice.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -134,30 +143,30 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
               <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block mb-2">Trip Duration</label>
               <div className="flex flex-col gap-3 mt-2 text-sm text-zinc-300">
                 <label className="flex items-center gap-3 cursor-pointer group select-none">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={duration1to3}
                     onChange={(e) => setDuration1to3(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500" 
-                  /> 
+                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500"
+                  />
                   <span className="group-hover:text-amber-500 transition-colors">1 - 3 Days</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group select-none">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={duration4to6}
                     onChange={(e) => setDuration4to6(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500" 
-                  /> 
+                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500"
+                  />
                   <span className="group-hover:text-amber-500 transition-colors">4 - 6 Days</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group select-none">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={duration7plus}
                     onChange={(e) => setDuration7plus(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500" 
-                  /> 
+                    className="w-4 h-4 rounded border-white/10 text-amber-500 bg-zinc-950 focus:ring-amber-500/50 cursor-pointer accent-amber-500"
+                  />
                   <span className="group-hover:text-amber-500 transition-colors">7+ Days</span>
                 </label>
               </div>
@@ -178,7 +187,7 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
               We couldn't find any tour plans that match your exact query. Try resetting your search or adjust the filters.
             </p>
             {hasActiveFilters && (
-              <Button 
+              <Button
                 onClick={handleResetFilters}
                 className="bg-amber-500 hover:bg-amber-600 text-black rounded-full font-semibold px-6 flex items-center gap-2"
               >
@@ -189,16 +198,28 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {filteredPackages.map((pkg) => (
+            {filteredPackages.map((pkg) => {
+              const starting =
+                pkg.startingPrice != null && pkg.startingNumberOfPersons != null
+                  ? {
+                      price: pkg.startingPrice,
+                      numberOfPersons: pkg.startingNumberOfPersons,
+                      pricePerPerson: Math.round(
+                        pkg.startingPrice / pkg.startingNumberOfPersons
+                      ),
+                    }
+                  : getStartingOffer(pkg.pricing, pkg.plans, pkg.numberOfPersons);
+
+              return (
               <Card key={pkg._id || pkg.slug} className="overflow-hidden border-white/5 hover:border-amber-500/30 bg-card hover:bg-zinc-900/40 hover:shadow-lg transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between h-full group">
                 <div>
                   <div className="relative h-48 w-full overflow-hidden">
-                    <Image 
-                      src={pkg.gallery?.[0] || "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?q=80&w=2070&auto=format&fit=crop"} 
-                      alt={pkg.title} 
-                      fill 
-                      className="object-cover transition-transform duration-750 group-hover:scale-105" 
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" 
+                    <Image
+                      src={pkg.gallery?.[0] || "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?q=80&w=2070&auto=format&fit=crop"}
+                      alt={pkg.title}
+                      fill
+                      className="object-cover transition-transform duration-750 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <Badge className="absolute top-4 right-4 bg-black/75 text-white backdrop-blur-md border border-white/10 font-bold px-2.5 py-1 flex items-center gap-1">
                       <span className="text-amber-500">★</span>
@@ -219,11 +240,14 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
                 </div>
                 <div>
                   <CardContent className="px-6 pb-4 pt-0">
-                    <div className="border-t border-white/5 pt-4 flex justify-between items-baseline">
-                      <span className="text-xs text-zinc-500">Starts from</span>
+                    <div className="border-t border-white/5 pt-4">
+                      <span className="text-xs text-zinc-500 block mb-1">Starting from</span>
                       <div className="text-2xl font-black text-white">
-                        ₹{pkg.pricing?.toLocaleString()} <span className="text-xs font-normal text-zinc-500">/ person</span>
+                        {formatPackagePrice(starting.price)}
                       </div>
+                      <p className="text-xs text-amber-500/90 font-medium mt-1">
+                        {formatTravelersLabel(starting.numberOfPersons)}
+                      </p>
                     </div>
                   </CardContent>
                   <CardFooter className="px-6 pb-6 pt-0">
@@ -233,7 +257,8 @@ export default function PackagesList({ initialPackages }: PackagesListProps) {
                   </CardFooter>
                 </div>
               </Card>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

@@ -22,7 +22,15 @@ export const firebaseAuth = async (req: Request, res: Response) => {
     // Find or create user
     let user = await User.findOne({ email });
 
-    const expectedRole = email === process.env.ADMIN_EMAIL_USER ? "admin" : "user";
+    const adminEmails = process.env.ADMIN_EMAILS 
+      ? process.env.ADMIN_EMAILS.split(',').map(e => e.trim()) 
+      : [];
+    // Fallback for backward compatibility
+    if (process.env.ADMIN_EMAIL_USER && !adminEmails.includes(process.env.ADMIN_EMAIL_USER)) {
+      adminEmails.push(process.env.ADMIN_EMAIL_USER.trim());
+    }
+
+    const expectedRole = adminEmails.includes(email) ? "admin" : "user";
 
     if (!user) {
       user = new User({

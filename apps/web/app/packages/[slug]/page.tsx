@@ -5,6 +5,12 @@ import DeletePackageButton from "../DeletePackageButton";
 import ImageSlideshow from "./ImageSlideshow";
 import BookingSidebar from "@/components/BookingSidebar";
 import PackageReviews from "@/components/PackageReviews";
+import {
+  formatPackagePrice,
+  formatTravelersLabel,
+  getStartingOffer,
+  normalizePlans,
+} from "@/lib/packagePricing";
 
 async function getPackage(slug: string) {
   try {
@@ -26,6 +32,17 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
   if (!pkg) return notFound();
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+  const plans = normalizePlans(pkg.plans);
+  const starting =
+    pkg.startingPrice != null && pkg.startingNumberOfPersons != null
+      ? {
+          price: pkg.startingPrice,
+          numberOfPersons: pkg.startingNumberOfPersons,
+          pricePerPerson:
+            pkg.startingPricePerPerson ??
+            Math.round(pkg.startingPrice / pkg.startingNumberOfPersons),
+        }
+      : getStartingOffer(pkg.pricing, pkg.plans, pkg.numberOfPersons);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -37,7 +54,8 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
             <div>
               <h1 className="text-5xl font-bold text-white mb-4">{pkg.title}</h1>
               <p className="text-xl text-gray-200">
-                {pkg.duration} Days • Starts from ₹{pkg.pricing?.toLocaleString()}
+                {pkg.duration} Days • Starting from {formatPackagePrice(starting.price)}{" "}
+                · {formatTravelersLabel(starting.numberOfPersons)}
               </p>
             </div>
             <div className="flex gap-3 shrink-0">
@@ -54,6 +72,30 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
           <section>
             <h2 className="text-3xl font-bold mb-4">Overview</h2>
             <p className="text-muted-foreground leading-relaxed">{pkg.description}</p>
+            {plans.length === 0 && (
+              <div className="mt-6 p-5 rounded-xl border border-border bg-card/50 space-y-2">
+                <h3 className="font-semibold text-lg">Package Pricing</h3>
+                <p>
+                  <span className="text-muted-foreground">Total package price: </span>
+                  <span className="font-bold">{formatPackagePrice(pkg.pricing)}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Covers: </span>
+                  <span className="font-medium">
+                    {pkg.numberOfPersons ?? 1}{" "}
+                    {(pkg.numberOfPersons ?? 1) === 1 ? "Traveler" : "Travelers"}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Effective price per person: </span>
+                  <span className="font-medium text-amber-500">
+                    {formatPackagePrice(
+                      Math.round(pkg.pricing / (pkg.numberOfPersons || 1))
+                    )}
+                  </span>
+                </p>
+              </div>
+            )}
           </section>
 
           {/* Highlights */}
@@ -102,42 +144,65 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
           )}
 
           {/* Plan Comparison Table */}
-          {pkg.plans?.length > 0 && (
+          {plans.length > 0 && (
             <section>
               <h2 className="text-3xl font-bold mb-6">Compare Plans</h2>
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-muted">
-                      <th className="p-4 border-b">Feature</th>
-                      {pkg.plans.map((plan: any) => (
+                      <th className="p-4 border-b">Details</th>
+                      {plans.map((plan) => (
                         <th
                           key={plan.name}
                           className={`p-4 border-b ${plan.name === "Premium" ? "text-amber-500" : ""}`}
                         >
                           {plan.name}
-                          <div className="text-sm font-normal">₹{plan.price?.toLocaleString()}</div>
+                          <div className="text-sm font-normal mt-1">
+                            {formatPackagePrice(plan.price)}
+                          </div>
+                          <div className="text-xs font-normal text-muted-foreground">
+                            {formatTravelersLabel(plan.numberOfPersons)}
+                          </div>
+                          <div className="text-xs font-normal text-amber-500/90">
+                            {formatPackagePrice(plan.pricePerPerson!)} / person
+                          </div>
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Get max features length to build rows */}
-                    {Array.from({ length: Math.max(...pkg.plans.map((p: any) => p.features?.length || 0)) }).map(
-                      (_, i) => (
-                        <tr key={i}>
-                          <td className="p-4 border-b font-medium">Feature {i + 1}</td>
-                          {pkg.plans.map((plan: any) => (
-                            <td
-                              key={plan.name}
-                              className={`p-4 border-b ${plan.name === "Premium" ? "font-semibold text-amber-500" : ""}`}
-                            >
-                              {plan.features?.[i] || "—"}
-                            </td>
-                          ))}
-                        </tr>
-                      )
-                    )}
+                    <tr>
+                      <td className="p-4 border-b font-medium">Travelers covered</td>
+                      {plans.map((plan) => (
+                        <td key={`${plan.name}-travelers`} className="p-4 border-b">
+                          {plan.numberOfPersons}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-4 border-b font-medium">Total package price</td>
+                      {plans.map((plan) => (
+                        <td key={`${plan.name}-total`} className="p-4 border-b">
+                          {formatPackagePrice(plan.price)}
+                        </td>
+                      ))}
+                    </tr>
+                    {Array.from({
+                      length: Math.max(...plans.map((p) => p.features?.length || 0)),
+                    }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="p-4 border-b font-medium">Feature {i + 1}</td>
+                        {plans.map((plan) => (
+                          <td
+                            key={`${plan.name}-f-${i}`}
+                            className={`p-4 border-b ${plan.name === "Premium" ? "font-semibold text-amber-500" : ""}`}
+                          >
+                            {plan.features?.[i] || "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

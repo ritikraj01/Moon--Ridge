@@ -33,7 +33,7 @@ export default function CustomTourBuilder() {
     
     if (transport === "private") price += 15000;
     
-    return (price * duration * travelers).toLocaleString();
+    return (price * duration * travelers).toLocaleString('en-IN');
   };
 
   const handleRequestQuote = async (e: React.FormEvent) => {
