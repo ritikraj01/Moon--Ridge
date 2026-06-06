@@ -10,9 +10,11 @@ import { Loader2 } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -34,37 +36,42 @@ export default function LoginPage() {
       router.push("/");
     } catch (error: any) {
       console.error("Google sign-in error:", error);
-      setError(error.response?.data?.message || "Failed to sign in with Google");
+      setError(error.response?.data?.message || "Failed to sign up with Google");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!name || !email || !password || !confirmPassword) return;
     
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       setError("");
       setLoading(true);
       
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`,
-        { email, password }
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/signup`,
+        { name, email, password }
       );
       
       setAuth(response.data.user, response.data.token);
       router.push("/");
     } catch (error: any) {
-      console.error("Email sign-in error:", error);
-      setError(error.response?.data?.message || "Invalid email or password");
+      console.error("Email sign-up error:", error);
+      setError(error.response?.data?.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-zinc-950 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-zinc-950 relative overflow-hidden py-12">
       {/* Background Gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-amber-500/10 blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-orange-600/10 blur-[120px]" />
@@ -79,8 +86,8 @@ export default function LoginPage() {
           <Link href="/" className="inline-block font-bold text-3xl tracking-tighter text-amber-500 mb-6">
             MOON<span className="text-white">RIDGE</span>
           </Link>
-          <h1 className="text-2xl font-semibold text-white mb-2">Welcome back</h1>
-          <p className="text-zinc-400 text-sm">Log in to your account</p>
+          <h1 className="text-2xl font-semibold text-white mb-2">Create an account</h1>
+          <p className="text-zinc-400 text-sm">Sign up to get started</p>
         </div>
 
         {error && (
@@ -89,7 +96,19 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleEmailSignIn} className="space-y-4">
+        <form onSubmit={handleEmailSignUp} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-xs font-medium text-zinc-400 ml-1">Full Name</label>
+            <input 
+              id="name"
+              type="text" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your Name"
+              className="w-full h-12 px-4 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
+              required
+            />
+          </div>
           <div className="space-y-2">
             <label htmlFor="email" className="text-xs font-medium text-zinc-400 ml-1">Email Address</label>
             <input 
@@ -112,15 +131,29 @@ export default function LoginPage() {
               placeholder="••••••••"
               className="w-full h-12 px-4 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
               required
+              minLength={8}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="text-xs font-medium text-zinc-400 ml-1">Confirm Password</label>
+            <input 
+              id="confirmPassword"
+              type="password" 
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full h-12 px-4 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
+              required
+              minLength={8}
             />
           </div>
           
           <Button 
             type="submit" 
             className="w-full h-12 bg-amber-500 text-black hover:bg-amber-600 rounded-xl font-medium transition-all duration-300 mt-2"
-            disabled={loading || !email || !password}
+            disabled={loading || !name || !email || !password || !confirmPassword}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
           </Button>
         </form>
 
@@ -149,9 +182,9 @@ export default function LoginPage() {
         </Button>
 
         <p className="text-center text-sm text-zinc-400">
-          Don't have an account?{" "}
-          <Link href="/signup" className="text-amber-500 hover:text-amber-400 transition-colors">
-            Create Account
+          Already have an account?{" "}
+          <Link href="/login" className="text-amber-500 hover:text-amber-400 transition-colors">
+            Login
           </Link>
         </p>
 

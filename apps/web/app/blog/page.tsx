@@ -26,9 +26,9 @@ async function getBlogs() {
 const CATEGORIES = ["All", "Destination Guide", "Travel Tips", "Adventure", "Food & Culture"];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Destination Guide": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  "Destination Guide": "bg-green-500/20 text-green-300 border-green-500/30",
   "Travel Tips": "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-  Adventure: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  "Adventure": "bg-orange-500/20 text-orange-300 border-orange-500/30",
   "Food & Culture": "bg-purple-500/20 text-purple-300 border-purple-500/30",
 };
 
@@ -113,9 +113,9 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
                 className="group flex flex-col rounded-2xl overflow-hidden border border-border/50 hover:border-amber-500/40 bg-card/20 hover:bg-card/50 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1"
               >
                 <div className="relative h-52 overflow-hidden bg-slate-800">
-                  {post.cover || post.thumbnail ? (
+                  {post.thumbnail || post.cover ? (
                     <Image
-                      src={post.cover || post.thumbnail}
+                      src={post.thumbnail || post.cover}
                       alt={post.title}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"

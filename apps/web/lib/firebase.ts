@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -24,38 +24,4 @@ export const signInWithGoogle = async () => {
     console.error("Google sign in error", error);
     throw error;
   }
-};
-
-export const sendMagicLink = async (email: string) => {
-  const actionCodeSettings = {
-    url: `${window.location.origin}/verify`,
-    handleCodeInApp: true,
-  };
-  try {
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    window.localStorage.setItem('emailForSignIn', email);
-  } catch (error) {
-    console.error("Error sending email link", error);
-    throw error;
-  }
-};
-
-export const completeMagicLink = async (url: string) => {
-  if (isSignInWithEmailLink(auth, url)) {
-    let email = window.localStorage.getItem('emailForSignIn');
-    if (!email) {
-      email = window.prompt('Please provide your email for confirmation');
-    }
-    if (email) {
-      try {
-        const result = await signInWithEmailLink(auth, email, url);
-        window.localStorage.removeItem('emailForSignIn');
-        return result.user;
-      } catch (error) {
-        console.error("Error signing in with email link", error);
-        throw error;
-      }
-    }
-  }
-  return null;
 };
