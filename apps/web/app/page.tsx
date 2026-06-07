@@ -7,6 +7,7 @@ import {
   formatTravelersLabel,
   getStartingOffer,
 } from "@/lib/packagePricing";
+import HeroVideo from "@/components/HeroVideo";
 
 const DEFAULT_COVER =
   "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?q=80&w=2070&auto=format&fit=crop";
@@ -32,16 +33,8 @@ export default async function Home() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative h-[80vh] w-full flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"
-            alt="Travel Hero"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <HeroVideo />
         </div>
 
         <div className="relative z-10 text-center text-white px-4">
