@@ -3,12 +3,13 @@ import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import Blog from "../models/Blog";
 import Subscriber from "../models/Subscriber";
 import EmailTask from "../models/EmailTask";
 
 export const generatePDFFromBlogs = async (blogs: any[], title: string, fileNamePrefix: string): Promise<string> => {
-  const uploadsDir = path.join(process.cwd(), "public/uploads/newsletters");
+  const uploadsDir = path.join(os.tmpdir(), "moonridge-newsletters");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
