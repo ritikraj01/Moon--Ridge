@@ -15,6 +15,8 @@ export interface IBlog extends Document {
   category: string;
   excerpt: string;
   featured: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const BlogSchema: Schema = new Schema(

@@ -15,6 +15,8 @@ import packageRoutes from "./routes/packageRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
 import authRoutes from "./routes/authRoutes";
 import blogRoutes from "./routes/blogRoutes";
+import subscriberRoutes from "./routes/subscriberRoutes";
+import { initCronJobs } from "./jobs/newsletterJob";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,7 +35,10 @@ app.use("/uploads", express.static(uploadsDir));
 // Database Connection
 mongoose
   .connect(process.env.MONGO_URI || "mongodb://localhost:27017/travel-booking")
-  .then(() => console.log("Connected to MongoDB"))
+  .then(() => {
+    console.log("Connected to MongoDB");
+    initCronJobs(); // Start cron jobs after DB connection
+  })
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // API Routes
@@ -42,6 +47,7 @@ app.use("/api/packages", packageRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/subscribers", subscriberRoutes);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "OK", message: "Server is running smoothly" });

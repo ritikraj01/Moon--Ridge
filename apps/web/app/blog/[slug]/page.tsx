@@ -2,6 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminEditButton from "@/components/blog/AdminEditButton";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 async function getBlogBySlug(slug: string) {
   try {
@@ -101,10 +105,30 @@ export default async function SingleBlogPage({ params }: { params: { slug: strin
         )}
 
         <div className="prose prose-invert prose-amber max-w-none">
-          {/* Simple rendering for now. In a real app, use react-markdown */}
-          <div className="whitespace-pre-wrap font-sans leading-loose text-slate-300">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code({ node, inline, className, children, ...props }: any) {
+                const match = /language-(\w+)/.exec(className || "");
+                return !inline && match ? (
+                  <SyntaxHighlighter
+                    {...props}
+                    style={vscDarkPlus as any}
+                    language={match[1]}
+                    PreTag="div"
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code {...props} className={className}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          >
             {blog.content}
-          </div>
+          </ReactMarkdown>
         </div>
       </section>
     </div>

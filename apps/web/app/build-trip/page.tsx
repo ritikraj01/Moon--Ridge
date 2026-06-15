@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+
 
 export default function CustomTourBuilder() {
   const [hotelType, setHotelType] = useState("standard");
@@ -17,41 +16,52 @@ export default function CustomTourBuilder() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
-  const basePrice = 10000;
-  
+  const basePrice = 6500;
+
   const calculatePrice = () => {
     let price = basePrice;
-    if (hotelType === "premium") price += 10000;
-    if (hotelType === "luxury") price += 25000;
-    
-    if (transport === "private") price += 15000;
-    
+    if (hotelType === "premium") price += 1000;
+    if (hotelType === "luxury") price += 3000;
+
+    if (transport === "private") price += 5000;
+
     return (price * duration * travelers).toLocaleString('en-IN');
   };
 
   const handleRequestQuote = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("handleRequestQuote");
+
+    if (!formData.name || !formData.email || !formData.phone) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     try {
-      await addDoc(collection(db, "custom_quotes"), {
-        ...formData,
-        tripDetails: {
-          duration,
-          travelers,
-          hotelType,
-          transport,
-          estimatedPrice: calculatePrice(),
-        },
-        createdAt: new Date(),
+      const tripDetails = {
+        duration,
+        travelers,
+        hotelType,
+        transport,
+        estimatedPrice: calculatePrice(),
+      };
+
+      // Send admin notification email
+      await fetch("/api/send-quote-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, tripDetails }),
       });
+
       setIsSuccess(true);
     } catch (error) {
       console.error("Error submitting quote request:", error);
@@ -64,31 +74,31 @@ export default function CustomTourBuilder() {
   return (
     <div className="min-h-screen bg-background py-20 px-4 max-w-5xl mx-auto">
       <h1 className="text-4xl font-bold mb-8 text-center text-amber-500">Customize Your Dream Trip</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-8">
           <Card className="bg-card">
             <CardContent className="p-6 space-y-6">
               <div>
                 <label className="text-sm font-medium mb-2 block">Duration (Days)</label>
-                <input 
-                  type="range" 
-                  min="3" max="15" 
-                  value={duration} 
+                <input
+                  type="range"
+                  min="3" max="15"
+                  value={duration}
                   onChange={(e) => setDuration(parseInt(e.target.value))}
-                  className="w-full accent-amber-500" 
+                  className="w-full accent-amber-500"
                 />
                 <div className="text-right mt-1 font-bold">{duration} Days</div>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium mb-2 block">Travelers</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  value={travelers} 
+                <input
+                  type="number"
+                  min="1"
+                  value={travelers}
                   onChange={(e) => setTravelers(parseInt(e.target.value))}
-                  className="w-full bg-background border border-border p-2 rounded-md" 
+                  className="w-full bg-background border border-border p-2 rounded-md"
                 />
               </div>
 
@@ -96,7 +106,7 @@ export default function CustomTourBuilder() {
                 <label className="text-sm font-medium mb-2 block">Hotel Type</label>
                 <div className="flex gap-2">
                   {["standard", "premium", "luxury"].map((type) => (
-                    <Button 
+                    <Button
                       key={type}
                       variant={hotelType === type ? "default" : "outline"}
                       className={hotelType === type ? "bg-amber-500 text-black hover:bg-amber-600" : ""}
@@ -112,7 +122,7 @@ export default function CustomTourBuilder() {
                 <label className="text-sm font-medium mb-2 block">Transport</label>
                 <div className="flex gap-2">
                   {["shared", "private"].map((type) => (
-                    <Button 
+                    <Button
                       key={type}
                       variant={transport === type ? "default" : "outline"}
                       className={transport === type ? "bg-amber-500 text-black hover:bg-amber-600" : ""}
@@ -135,7 +145,7 @@ export default function CustomTourBuilder() {
                 <div className="text-5xl font-bold text-amber-500 mb-6">
                   ₹{calculatePrice()}
                 </div>
-                <Button 
+                <Button
                   onClick={() => setIsDialogOpen(true)}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-black py-6 text-lg rounded-full"
                 >
@@ -158,7 +168,7 @@ export default function CustomTourBuilder() {
               Enter your details below and we will get back to you with a personalized itinerary and quote.
             </DialogDescription>
           </DialogHeader>
-          
+
           {isSuccess ? (
             <div className="py-6 text-center space-y-4">
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -173,37 +183,34 @@ export default function CustomTourBuilder() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleRequestQuote} className="space-y-4 py-4">
+            <form onSubmit={handleRequestQuote} className="space-y-4 py-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input 
-                  id="name" 
-                  required 
+                <Input
+                  id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="John Doe" 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="John Doe"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  required 
+                <Input
+                  id="email"
+                  type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="john@example.com" 
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="john@example.com"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  required 
+                <Input
+                  id="phone"
+                  type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="+91 98765 43210" 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+91 00000 00000"
                 />
               </div>
               <DialogFooter className="pt-4">

@@ -3,7 +3,6 @@
 import { useAuthStore } from "@/lib/authStore";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CreateBlogButton() {

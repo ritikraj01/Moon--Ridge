@@ -9,6 +9,7 @@ export const metadata = {
 };
 
 import CreateBlogButton from "@/components/blog/CreateBlogButton";
+import NewsletterForm from "@/components/blog/NewsletterForm";
 
 async function getBlogs() {
   try {
@@ -176,19 +177,7 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
             New destination guides, trip hacks and exclusive MoonRidge deals — delivered every two weeks.
           </p>
-          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              className="flex-1 px-5 py-3 rounded-full bg-card border border-border focus:outline-none focus:border-amber-500 text-sm transition-colors"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all hover:scale-105"
-            >
-              Subscribe
-            </button>
-          </form>
+          <NewsletterForm />
         </section>
       </div>
     </div>
