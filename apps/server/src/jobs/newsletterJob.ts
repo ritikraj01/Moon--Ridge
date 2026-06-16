@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
@@ -171,7 +171,7 @@ export const queueWelcomeEmail = async (email: string) => {
 
     await task.save();
     console.log(`Queued welcome email for ${email}`);
-    
+
     // Process queue asynchronously to send immediately
     processEmailQueue().catch(console.error);
   } catch (err) {
@@ -189,7 +189,7 @@ export const queueNewsletterTasks = async () => {
     const htmlContent = generateNewsletterHTML(blogs, "Your Monthly MoonRidge Travel Newsletter");
 
     const subscribers = await Subscriber.find({ active: true });
-    
+
     const tasks = subscribers.map((sub) => ({
       to: sub.email,
       subject: "Your Monthly MoonRidge Travel Newsletter",
@@ -207,21 +207,15 @@ export const queueNewsletterTasks = async () => {
   }
 };
 
-// Create a mail transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER, 
-      pass: process.env.EMAIL_PASS, 
-    },
-  });
+// Create a Resend client
+const createResendClient = () => {
+  return new Resend(process.env.RESEND_API_KEY);
 };
 
 // Send queued emails
 export const processEmailQueue = async () => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn("EMAIL_USER or EMAIL_PASS not set in .env. Skipping email processing.");
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not set in .env. Skipping email processing.");
     return;
   }
 
@@ -252,25 +246,32 @@ export const processEmailQueue = async () => {
       return; // Queue is empty
     }
 
-    const transporter = createTransporter();
+    const resend = createResendClient();
 
     const processedAttachments = new Set<string>();
 
     for (const task of pendingTasks) {
       try {
-        await transporter.sendMail({
-          from: `"MoonRidge Adventure" <${process.env.EMAIL_USER}>`,
-          to: task.to,
+        // Read PDF attachment as base64 buffer for Resend
+        const pdfBuffer = fs.readFileSync(task.attachmentPath);
+
+        const { error } = await resend.emails.send({
+          from: "MoonRidge Adventure <newsletter@moonridgeadventure.com>",
+          to: [task.to],
           subject: task.subject,
           text: "Hello! Attached is your monthly roundup of the best travel stories from MoonRidge. Enjoy reading!",
           html: task.htmlContent,
           attachments: [
             {
               filename: "MoonRidge_Newsletter.pdf",
-              path: task.attachmentPath,
+              content: pdfBuffer,
             },
           ],
         });
+
+        if (error) {
+          throw new Error(error.message);
+        }
 
         task.status = "sent";
         task.sentAt = new Date();
