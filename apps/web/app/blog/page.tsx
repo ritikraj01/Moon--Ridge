@@ -24,7 +24,7 @@ async function getBlogs() {
   }
 }
 
-const CATEGORIES = ["All", "Destination Guide", "Travel Tips", "Adventure", "Food & Culture"];
+const CATEGORIES = ["All", "Destination Guide", "Travel Tips", "Adventure", "Food & Culture", "Journal"];
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Destination Guide": "bg-green-500/20 text-green-300 border-green-500/30",
@@ -137,6 +137,20 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
                   <h3 className="font-bold text-lg leading-snug mb-3 group-hover:text-amber-400 transition-colors line-clamp-2">
                     {post.title}
                   </h3>
+                  {(post.tripLocation || post.tripDate) && (
+                    <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
+                      {post.tripLocation && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-amber-500">📍</span> {post.tripLocation}
+                        </span>
+                      )}
+                      {post.tripDate && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-amber-500">📅</span> {post.tripDate}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-6">
                     {post.excerpt}
                   </p>

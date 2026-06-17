@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,10 @@ import type { ContentBlock } from "@/lib/blog-types";
 
 const CATEGORIES = ["Destination Guide", "Travel Tips", "Adventure", "Food & Culture", "Journal"];
 
-export default function CreateBlogPage() {
+export default function EditBlogPage() {
   const router = useRouter();
+  const params = useParams();
+  const slug = params.slug as string;
   const { user, token } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
@@ -27,19 +29,24 @@ export default function CreateBlogPage() {
     author: "",
     authorAvatar: "",
     featured: false,
+    status: "draft",
     // SEO
     seoTitle: "",
     seoDescription: "",
     canonicalUrl: "",
     ogImage: "",
-    // Journal fields
+    // Journal
     tripDate: "",
     tripLocation: "",
     travelRoute: "",
   });
 
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [blogId, setBlogId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState<"thumbnail" | "cover" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"content" | "seo" | "journal">("content");
@@ -47,11 +54,64 @@ export default function CreateBlogPage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (mounted && user?.role !== "admin") router.push("/blog");
-    if (mounted && user) setForm((prev) => ({ ...prev, author: user.name || "Admin" }));
-  }, [mounted, user, router]);
+    if (mounted && user?.role !== "admin") { router.push("/blog"); return; }
+    if (mounted && slug) fetchBlog();
+  }, [mounted, user, router, slug]);
+
+  const fetchBlog = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/slug/${slug}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch blog");
+      const data = await res.json();
+      setBlogId(data._id);
+      setForm({
+        title: data.title || "",
+        slug: data.slug || "",
+        category: data.category || "Destination Guide",
+        excerpt: data.excerpt || "",
+        thumbnail: data.thumbnail || "",
+        cover: data.cover || "",
+        readTime: data.readTime || "5 min read",
+        author: data.author || "",
+        authorAvatar: data.authorAvatar || "",
+        featured: data.featured || false,
+        status: data.status || "draft",
+        seoTitle: data.seoTitle || "",
+        seoDescription: data.seoDescription || "",
+        canonicalUrl: data.canonicalUrl || "",
+        ogImage: data.ogImage || "",
+        tripDate: data.tripDate || "",
+        tripLocation: data.tripLocation || "",
+        travelRoute: data.travelRoute || "",
+      });
+      // Load contentBlocks — migrate legacy content if needed
+      if (data.contentBlocks && data.contentBlocks.length > 0) {
+        setContentBlocks(data.contentBlocks);
+      } else if (data.content) {
+        // Migrate: wrap legacy string in a paragraph block
+        setContentBlocks([{ type: "paragraph", content: data.content }]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!mounted || user?.role !== "admin") return null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm">Loading article...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -59,14 +119,6 @@ export default function CreateBlogPage() {
       ...prev,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
-
-    if (name === "title") {
-      setForm((prev) => ({
-        ...prev,
-        title: value,
-        slug: value.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-"),
-      }));
-    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "thumbnail" | "cover") => {
@@ -92,30 +144,53 @@ export default function CreateBlogPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent, newStatus?: "draft" | "published") => {
     e.preventDefault();
-    setLoading(true);
+    if (!blogId) return;
+    if (newStatus === "published") setPublishing(true);
+    else setSaving(true);
     setError(null);
+    const payload = { ...form, contentBlocks };
+    if (newStatus) payload.status = newStatus;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs`, {
-        method: "POST",
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/${blogId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...form, contentBlocks }),
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
+      if (!res.ok) {
         const data = await res.json();
-        router.push(`/blog/edit/${data.slug}`);
-      } else {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to create blog draft");
+        throw new Error(data.message || "Failed to update blog");
+      }
+      const data = await res.json();
+      setForm((prev) => ({ ...prev, status: data.status }));
+      if (newStatus === "published") {
+        router.push(`/blog/${data.slug}`);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to save blog");
     } finally {
-      setLoading(false);
+      if (newStatus === "published") setPublishing(false);
+      else setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!blogId || !window.confirm("Delete this article permanently? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/${blogId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete blog");
+      router.push("/blog");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete blog");
+      setDeleting(false);
     }
   };
 
@@ -128,10 +203,19 @@ export default function CreateBlogPage() {
 
   return (
     <div className="min-h-screen bg-background py-20 px-4 md:px-8 max-w-5xl mx-auto">
-      <div className="mb-10">
-        <p className="text-amber-500 font-bold uppercase tracking-widest text-xs mb-2">Admin</p>
-        <h1 className="text-4xl font-bold mb-2">Create New Article</h1>
-        <p className="text-muted-foreground text-sm">Build a rich travel story with blocks — no code required.</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-10 flex-wrap gap-4">
+        <div>
+          <p className="text-amber-500 font-bold uppercase tracking-widest text-xs mb-2">Admin Editor</p>
+          <h1 className="text-4xl font-bold">Edit Article</h1>
+        </div>
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+          form.status === "published"
+            ? "bg-green-500/20 text-green-400 border border-green-500/30"
+            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+        }`}>
+          {form.status.toUpperCase()}
+        </span>
       </div>
 
       {error && (
@@ -140,15 +224,15 @@ export default function CreateBlogPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* ── Article Metadata ── */}
+      <form onSubmit={(e) => handleSave(e)} className="space-y-8">
+        {/* Metadata */}
         <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl space-y-6">
           <h2 className="text-lg font-semibold text-white">Article Details</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Title</label>
-              <Input name="title" value={form.title} onChange={handleChange} required className="bg-slate-950 border-slate-700 text-white" placeholder="Article title..." />
+              <Input name="title" value={form.title} onChange={handleChange} required className="bg-slate-950 border-slate-700 text-white" />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Slug</label>
@@ -165,7 +249,7 @@ export default function CreateBlogPage() {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Read Time</label>
-              <Input name="readTime" value={form.readTime} onChange={handleChange} className="bg-slate-950 border-slate-700 text-white" placeholder="8 min read" />
+              <Input name="readTime" value={form.readTime} onChange={handleChange} className="bg-slate-950 border-slate-700 text-white" />
             </div>
             <div className="space-y-2 flex flex-col justify-end">
               <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -177,10 +261,9 @@ export default function CreateBlogPage() {
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Excerpt</label>
-            <Textarea name="excerpt" value={form.excerpt} onChange={handleChange} required rows={3} className="bg-slate-950 border-slate-700 text-white resize-none" placeholder="A short summary shown in cards and SEO..." />
+            <Textarea name="excerpt" value={form.excerpt} onChange={handleChange} required rows={3} className="bg-slate-950 border-slate-700 text-white resize-none" />
           </div>
 
-          {/* Images */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {(["thumbnail", "cover"] as const).map((field) => (
               <div key={field} className="space-y-2">
@@ -195,7 +278,7 @@ export default function CreateBlogPage() {
           </div>
         </div>
 
-        {/* ── Tabs: Content / SEO / Journal ── */}
+        {/* Tabs */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           <div className="flex gap-2 p-3 border-b border-slate-800">
             <button type="button" className={tabClass("content")} onClick={() => setActiveTab("content")}>✍ Content Blocks</button>
@@ -210,14 +293,13 @@ export default function CreateBlogPage() {
 
             {activeTab === "seo" && (
               <div className="space-y-5">
-                <p className="text-xs text-muted-foreground">These fields override the defaults for search engines and social sharing.</p>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">SEO Title</label>
                   <Input name="seoTitle" value={form.seoTitle} onChange={handleChange} className="bg-slate-950 border-slate-700 text-white" placeholder="Best Ladakh Travel Guide 2025 | MoonRidge" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Meta Description</label>
-                  <Textarea name="seoDescription" value={form.seoDescription} onChange={handleChange} rows={3} className="bg-slate-950 border-slate-700 text-white resize-none" placeholder="A 150-160 character description for search engines..." />
+                  <Textarea name="seoDescription" value={form.seoDescription} onChange={handleChange} rows={3} className="bg-slate-950 border-slate-700 text-white resize-none" placeholder="150-160 character description..." />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Canonical URL</label>
@@ -232,7 +314,6 @@ export default function CreateBlogPage() {
 
             {activeTab === "journal" && (
               <div className="space-y-5">
-                <p className="text-xs text-muted-foreground">Additional fields for travel journal entries.</p>
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Trip Date / Period</label>
                   <Input name="tripDate" value={form.tripDate} onChange={handleChange} className="bg-slate-950 border-slate-700 text-white" placeholder="May 10–16, 2025" />
@@ -250,14 +331,45 @@ export default function CreateBlogPage() {
           </div>
         </div>
 
-        {/* ── Actions ── */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="ghost" onClick={() => router.back()} className="text-slate-400 hover:text-white">
-            Cancel
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={saving || publishing || deleting}
+            className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30"
+          >
+            {deleting ? "Deleting..." : "Delete Article"}
           </Button>
-          <Button type="submit" disabled={loading} className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8">
-            {loading ? "Saving..." : "Save Draft"}
-          </Button>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-slate-700 hover:bg-slate-800"
+              onClick={() => router.push(`/blog/${form.slug}`)}
+            >
+              View Article
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || publishing || deleting}
+              className="border-amber-500/60 text-amber-400 hover:bg-amber-500/10"
+              onClick={(e) => handleSave(e, "draft")}
+            >
+              {saving ? "Saving..." : "Save Draft"}
+            </Button>
+            <Button
+              type="button"
+              disabled={saving || publishing || deleting}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
+              onClick={(e) => handleSave(e, "published")}
+            >
+              {publishing ? "Publishing..." : "Publish"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

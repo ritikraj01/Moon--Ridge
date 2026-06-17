@@ -5,15 +5,13 @@ import {
   createBlog,
   updateBlog,
   deleteBlog,
+  duplicateBlog,
 } from "../controllers/blogController";
 import { protect, admin } from "../middleware/auth";
 
 const router = Router();
 
-// To correctly handle optional protect for getBlogs/getBlogBySlug:
-// We can use a soft auth middleware that doesn't reject if token is missing,
-// or we just let protect handle it if we create a specific route for admin blogs.
-// But we'll use a simple custom middleware for soft auth just for these routes
+// Soft-auth middleware: attaches user if token present, but does not reject
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -24,7 +22,7 @@ const softProtect = (req: Request, res: Response, next: NextFunction) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
       (req as any).user = (decoded as any).user;
     } catch (err) {
-      // ignore
+      // ignore invalid tokens
     }
   }
   next();
@@ -37,7 +35,10 @@ router
   .put(protect, admin, updateBlog)
   .delete(protect, admin, deleteBlog);
 
-// Important: Put /slug/:slug so it doesn't conflict with /:id
+// Duplicate a blog — admin only
+router.route("/:id/duplicate").post(protect, admin, duplicateBlog);
+
+// Important: /slug/:slug must come before /:id to avoid conflicts
 router.route("/slug/:slug").get(softProtect, getBlogBySlug);
 
 export default router;

@@ -17,7 +17,7 @@ export default function AdminEditButton({ slug }: { slug: string }) {
   if (!mounted || user?.role !== "admin") return null;
 
   return (
-    <Link href={`/blog/${slug}/edit`}>
+    <Link href={`/blog/edit/${slug}`}>
       <Button variant="outline" className="border-amber-500/50 text-amber-500 hover:bg-amber-500 hover:text-black flex items-center gap-2">
         <Edit size={16} />
         Edit Blog

@@ -11,11 +11,16 @@ export default function DraftsPage() {
   const { user, token } = useAuthStore();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) return;
-    if (user.role !== "admin") {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!user || user.role !== "admin") {
       router.push("/blog");
       return;
     }
@@ -39,9 +44,9 @@ export default function DraftsPage() {
     };
 
     fetchDrafts();
-  }, [user, token, router]);
+  }, [mounted, user, token, router]);
 
-  if (!user || user.role !== "admin") return null;
+  if (!mounted || !user || user.role !== "admin") return null;
 
   return (
     <div className="min-h-screen bg-background py-20 px-4 md:px-8 max-w-7xl mx-auto">
@@ -69,7 +74,7 @@ export default function DraftsPage() {
           {blogs.map((post: any) => (
             <Link
               key={post.slug}
-              href={`/blog/${post.slug}/edit`}
+              href={`/blog/edit/${post.slug}`}
               className="group flex flex-col rounded-2xl overflow-hidden border border-amber-500/30 hover:border-amber-500 bg-card/20 hover:bg-card/50 transition-all duration-300"
             >
               <div className="relative h-48 overflow-hidden bg-slate-800">
