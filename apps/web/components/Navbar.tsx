@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/packages", label: "Destinations" },
+  { href: "/map-of-ladakh", label: "Map of Ladakh" },
   { href: "/build-trip", label: "Customize Trip" },
   { href: "/blog", label: "Blog" },
 ];
@@ -35,8 +37,17 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-7xl mx-auto items-center justify-between px-4">
         {/* Brand Logo */}
-        <Link href="/" className="font-bold text-2xl tracking-tighter text-amber-500">
-          MOON<span className="text-white">RIDGE</span>
+        <Link href="/" className="flex items-center gap-3 font-bold text-2xl tracking-tighter text-amber-500 group">
+          <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-zinc-900/80 border border-amber-500/20 group-hover:border-amber-500/40 shadow-inner p-1.5 transition-all duration-300">
+            <Image
+              src="/moonridge-logo.svg"
+              alt="MoonRidge Logo"
+              width={32}
+              height={32}
+              className="object-contain"
+            />
+          </div>
+          <span>MOON<span className="text-white">RIDGE</span></span>
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -105,8 +116,17 @@ export default function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] border-l border-zinc-800 bg-background p-6">
               <SheetHeader className="text-left border-b border-zinc-800/80 pb-4 mb-6">
-                <SheetTitle className="font-bold text-2xl tracking-tighter text-amber-500">
-                  MOON<span className="text-white">RIDGE</span>
+                <SheetTitle className="flex items-center gap-2.5 font-bold text-2xl tracking-tighter text-amber-500">
+                  <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900/80 border border-amber-500/20 p-1.5">
+                    <Image
+                      src="/moonridge-logo.svg"
+                      alt="MoonRidge Logo"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>MOON<span className="text-white">RIDGE</span></span>
                 </SheetTitle>
               </SheetHeader>
 

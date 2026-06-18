@@ -28,9 +28,10 @@ const CATEGORIES = ["All", "Destination Guide", "Travel Tips", "Adventure", "Foo
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Destination Guide": "bg-green-500/20 text-green-300 border-green-500/30",
-  "Travel Tips": "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  "Travel Tips": "bg-blue-500/20 text-blue-300 border-blue-500/30",
   "Adventure": "bg-orange-500/20 text-orange-300 border-orange-500/30",
   "Food & Culture": "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  "Journal": "bg-pink-500/20 text-pink-300 border-pink-500/30",
 };
 
 export default async function BlogPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
@@ -189,7 +190,7 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
             Get Travel Stories in Your Inbox
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            New destination guides, trip hacks and exclusive MoonRidge deals — delivered every two weeks.
+            New destination guides, trip hacks and exclusive MoonRidge deals — delivered every month.
           </p>
           <NewsletterForm />
         </section>

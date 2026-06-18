@@ -16,6 +16,7 @@ import reviewRoutes from "./routes/reviewRoutes";
 import authRoutes from "./routes/authRoutes";
 import blogRoutes from "./routes/blogRoutes";
 import subscriberRoutes from "./routes/subscriberRoutes";
+import locationRoutes from "./routes/locationRoutes";
 import { initCronJobs } from "./jobs/newsletterJob";
 
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/subscribers", subscriberRoutes);
+app.use("/api/locations", locationRoutes);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "OK", message: "Server is running smoothly" });

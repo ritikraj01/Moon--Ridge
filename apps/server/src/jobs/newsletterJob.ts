@@ -24,9 +24,9 @@ export const generatePDFFromBlogs = async (blogs: any[], title: string, fileName
 
       doc.pipe(writeStream);
 
-      // Add placeholder logo
+      // Add logo
       try {
-        const logoUrl = "https://via.placeholder.com/150x50?text=MoonRidge";
+        const logoUrl = `${process.env.WEBSITE_URL || "https://www.moonridgeadventure.com"}/logo.jpeg`;
         const res = await fetch(logoUrl);
         if (res.ok) {
           const arrayBuffer = await res.arrayBuffer();
@@ -83,8 +83,8 @@ export const generatePDFFromBlogs = async (blogs: any[], title: string, fileName
 };
 
 const generateNewsletterHTML = (blogs: any[], title: string): string => {
-  const logoUrl = "https://via.placeholder.com/150x50?text=MoonRidge"; // placeholder
-  const websiteUrl = "https://www.moonridgeadventure.com/";
+  const logoUrl = `${process.env.WEBSITE_URL || "https://www.moonridgeadventure.com"}/logo.jpeg`;
+  const websiteUrl = process.env.WEBSITE_URL || "https://www.moonridgeadventure.com/";
   const packagesUrl = "https://www.moonridgeadventure.com/packages";
   const socialLinks = `
     <a href="#" style="margin: 0 10px; color: #4F46E5;">Facebook</a>

@@ -6,15 +6,18 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { signInWithGoogle } from "@/lib/firebase";
 import { useAuthStore } from "@/lib/authStore";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -82,9 +85,20 @@ export default function SignupPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-md p-8 md:p-10 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-10"
       >
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block font-bold text-3xl tracking-tighter text-amber-500 mb-6">
-            MOON<span className="text-white">RIDGE</span>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Link href="/" className="flex flex-col items-center gap-3.5 mb-6 group">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-950/80 border border-amber-500/20 group-hover:border-amber-500/40 flex items-center justify-center p-2.5 shadow-xl transition-all duration-300">
+              <Image
+                src="/moonridge-logo.svg"
+                alt="MoonRidge Logo"
+                width={56}
+                height={56}
+                className="object-contain animate-pulse-slow"
+              />
+            </div>
+            <span className="font-bold text-3xl tracking-tighter text-amber-500">
+              MOON<span className="text-white">RIDGE</span>
+            </span>
           </Link>
           <h1 className="text-2xl font-semibold text-white mb-2">Create an account</h1>
           <p className="text-zinc-400 text-sm">Sign up to get started</p>
@@ -123,29 +137,47 @@ export default function SignupPage() {
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-xs font-medium text-zinc-400 ml-1">Password</label>
-            <input 
-              id="password"
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full h-12 px-4 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
-              required
-              minLength={8}
-            />
+            <div className="relative">
+              <input 
+                id="password"
+                type={showPassword ? "text" : "password"} 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full h-12 pl-4 pr-12 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-xs font-medium text-zinc-400 ml-1">Confirm Password</label>
-            <input 
-              id="confirmPassword"
-              type="password" 
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full h-12 px-4 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
-              required
-              minLength={8}
-            />
+            <div className="relative">
+              <input 
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"} 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full h-12 pl-4 pr-12 bg-zinc-950/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all duration-300"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           
           <Button 

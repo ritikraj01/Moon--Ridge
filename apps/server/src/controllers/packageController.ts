@@ -178,7 +178,8 @@ export const uploadImage = async (req: Request, res: Response) => {
 
       fs.writeFileSync(filePath, req.file.buffer);
 
-      const localUrl = `${process.env.BASE_URL}/uploads/${filename}`;
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const localUrl = `${baseUrl}/uploads/${filename}`;
       return res.status(200).json({ url: localUrl, isMock: true });
     }
   } catch (error: any) {
