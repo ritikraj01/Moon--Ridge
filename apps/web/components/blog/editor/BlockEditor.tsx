@@ -41,6 +41,8 @@ import {
   RelatedPackageEditor,
   MapEditor,
   DividerEditor,
+  AudioPhraseEditor,
+  LanguageGuideEditor,
 } from "./BlockEditors";
 
 interface Props {
@@ -74,6 +76,8 @@ function renderEditor(block: ContentBlock, onChange: (b: ContentBlock) => void, 
     case "relatedPackage": return <RelatedPackageEditor block={block} onChange={onChange} />;
     case "map": return <MapEditor block={block} onChange={onChange} />;
     case "divider": return <DividerEditor block={block} onChange={onChange} />;
+    case "audioPhrase": return <AudioPhraseEditor block={block} onChange={onChange} token={token} />;
+    case "languageGuide": return <LanguageGuideEditor block={block} onChange={onChange} token={token} />;
     default: return <p className="text-slate-500 text-sm">Unknown block type</p>;
   }
 }

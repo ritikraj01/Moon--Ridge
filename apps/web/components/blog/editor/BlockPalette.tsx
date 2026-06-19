@@ -14,7 +14,7 @@ interface Props {
 const GROUPS = [
   { label: "Text", types: ["heading", "paragraph", "richText", "quote"] },
   { label: "Media", types: ["hero", "image", "gallery", "imageText", "video"] },
-  { label: "Travel", types: ["travelInfoTable", "highlightCard", "timeline", "checklist"] },
+  { label: "Travel", types: ["travelInfoTable", "highlightCard", "timeline", "checklist", "audioPhrase", "languageGuide"] },
   { label: "Structure", types: ["faq", "callout", "relatedPackage", "map", "divider"] },
 ] as const;
 

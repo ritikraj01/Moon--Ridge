@@ -138,6 +138,9 @@ export interface RelatedPackageBlock {
 export interface MapBlock {
   type: "map";
   address?: string;
+  latitude?: number;
+  longitude?: number;
+  zoom?: number;
   embedUrl?: string;
   caption?: string;
 }
@@ -146,6 +149,26 @@ export interface DividerBlock {
   type: "divider";
   style?: "line" | "dots" | "mountains" | "ornament";
   label?: string;
+}
+
+export interface AudioPhraseBlock {
+  type: "audioPhrase";
+  phrase: string;
+  translation: string;
+  audioUrl: string;
+  note?: string;
+}
+
+export interface LanguageGuidePhrase {
+  phrase: string;
+  translation: string;
+  audioUrl: string;
+}
+
+export interface LanguageGuideBlock {
+  type: "languageGuide";
+  title: string;
+  phrases: LanguageGuidePhrase[];
 }
 
 // ── Discriminated Union ───────────────────────────────────────
@@ -168,7 +191,9 @@ export type ContentBlock =
   | ChecklistBlock
   | RelatedPackageBlock
   | MapBlock
-  | DividerBlock;
+  | DividerBlock
+  | AudioPhraseBlock
+  | LanguageGuideBlock;
 
 export type BlockType = ContentBlock["type"];
 
@@ -332,9 +357,9 @@ export const BLOCK_PALETTE: BlockPaletteItem[] = [
   {
     type: "map",
     label: "Map",
-    description: "Google Maps location embed",
+    description: "Interactive Leaflet map location",
     icon: "📍",
-    defaultData: { address: "", embedUrl: "" },
+    defaultData: { address: "", latitude: 34.1526, longitude: 77.5771, zoom: 12 },
   },
   {
     type: "divider",
@@ -342,5 +367,19 @@ export const BLOCK_PALETTE: BlockPaletteItem[] = [
     description: "Section separator",
     icon: "─",
     defaultData: { style: "line", label: "" },
+  },
+  {
+    type: "audioPhrase",
+    label: "Audio Phrase",
+    description: "Pronunciation phrase with custom audio player",
+    icon: "🔊",
+    defaultData: { phrase: "Julley", translation: "Hello / Thank You / Goodbye", audioUrl: "", note: "" },
+  },
+  {
+    type: "languageGuide",
+    label: "Language Guide",
+    description: "Multiple audio phrases in a beautiful card",
+    icon: "🗣️",
+    defaultData: { title: "Essential Ladakhi Phrases", phrases: [{ phrase: "Julley", translation: "Hello / Thank You / Goodbye", audioUrl: "" }] },
   },
 ];

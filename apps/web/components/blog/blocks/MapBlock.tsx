@@ -2,15 +2,17 @@
 
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
+import dynamic from "next/dynamic";
 import type { MapBlock } from "@/lib/blog-types";
+
+const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
 interface Props {
   block: MapBlock;
 }
 
 export default function MapBlock({ block }: Props) {
-  // Map integration will be added in a future update.
-  // For now show a placeholder with the address.
+  const hasCoordinates = block.latitude !== undefined && block.longitude !== undefined;
 
   return (
     <motion.div
@@ -18,9 +20,17 @@ export default function MapBlock({ block }: Props) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5 }}
-      className="my-10 rounded-2xl overflow-hidden border border-border/50 bg-card/20"
+      className="my-10 rounded-2xl overflow-hidden border border-border/50 bg-card/20 relative"
     >
-      {block.embedUrl ? (
+      {hasCoordinates ? (
+        <LeafletMap
+          lat={block.latitude!}
+          lng={block.longitude!}
+          zoom={block.zoom}
+          address={block.address}
+          caption={block.caption}
+        />
+      ) : block.embedUrl ? (
         <iframe
           src={block.embedUrl}
           width="100%"
@@ -31,13 +41,14 @@ export default function MapBlock({ block }: Props) {
           title={block.caption || "Map"}
         />
       ) : (
-        <div className="h-64 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+        <div className="h-64 flex flex-col items-center justify-center gap-3 text-muted-foreground bg-slate-900/50">
           <MapPin size={32} className="text-amber-500/60" />
           <p className="text-sm font-medium">{block.address || "Map location"}</p>
-          <p className="text-xs text-muted-foreground/60">Map integration coming soon</p>
+          <p className="text-xs text-muted-foreground/60">Coordinates required to display map</p>
         </div>
       )}
-      {block.caption && (
+      
+      {(!hasCoordinates && block.caption) && (
         <div className="px-4 py-3 border-t border-border/30 text-xs text-muted-foreground text-center">
           {block.caption}
         </div>

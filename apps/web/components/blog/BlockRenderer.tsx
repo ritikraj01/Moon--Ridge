@@ -18,6 +18,8 @@ import {
   RelatedPackageBlock,
   MapBlock,
   DividerBlock,
+  AudioPhraseBlock,
+  LanguageGuideBlock,
 } from "./blocks";
 
 interface Props {
@@ -92,6 +94,10 @@ export default function BlockRenderer({ contentBlocks, legacyContent }: Props) {
             return <MapBlock key={key} block={block} />;
           case "divider":
             return <DividerBlock key={key} block={block} />;
+          case "audioPhrase":
+            return <AudioPhraseBlock key={key} block={block} />;
+          case "languageGuide":
+            return <LanguageGuideBlock key={key} block={block} />;
           default:
             return null;
         }

@@ -16,3 +16,5 @@ export { default as ChecklistBlock } from "./ChecklistBlock";
 export { default as RelatedPackageBlock } from "./RelatedPackageBlock";
 export { default as MapBlock } from "./MapBlock";
 export { default as DividerBlock } from "./DividerBlock";
+export { default as AudioPhraseBlock } from "./AudioPhraseBlock";
+export { default as LanguageGuideBlock } from "./LanguageGuideBlock";

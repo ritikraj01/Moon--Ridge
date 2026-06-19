@@ -4,7 +4,7 @@
 // All individual block editor forms — one export per block type
 // ============================================================
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type {
   HeroBlock,
   HeadingBlock,
@@ -26,6 +26,8 @@ import type {
   DividerBlock,
   HighlightCardVariant,
   CalloutVariant,
+  AudioPhraseBlock,
+  LanguageGuideBlock,
 } from "@/lib/blog-types";
 import { Plus, Trash2 } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -706,18 +708,43 @@ export function MapEditor({ block, onChange }: { block: MapBlock; onChange: (b: 
   return (
     <div className="space-y-4">
       <FieldGroup>
-        <Label>Address</Label>
-        <Input value={block.address || ""} onChange={(v) => u({ address: v })} placeholder="Leh, Ladakh, India" />
+        <Label>Address / Title</Label>
+        <Input value={block.address || ""} onChange={(v) => u({ address: v })} placeholder="e.g. Leh Palace" />
       </FieldGroup>
+      <div className="grid grid-cols-3 gap-3">
+        <FieldGroup>
+          <Label>Latitude</Label>
+          <Input 
+            value={block.latitude?.toString() || ""} 
+            onChange={(v) => u({ latitude: parseFloat(v) || undefined })} 
+            placeholder="34.1526" 
+          />
+        </FieldGroup>
+        <FieldGroup>
+          <Label>Longitude</Label>
+          <Input 
+            value={block.longitude?.toString() || ""} 
+            onChange={(v) => u({ longitude: parseFloat(v) || undefined })} 
+            placeholder="77.5771" 
+          />
+        </FieldGroup>
+        <FieldGroup>
+          <Label>Zoom</Label>
+          <Input 
+            value={block.zoom?.toString() || ""} 
+            onChange={(v) => u({ zoom: parseInt(v) || 12 })} 
+            placeholder="12" 
+          />
+        </FieldGroup>
+      </div>
       <FieldGroup>
-        <Label>Embed URL (optional — overrides address)</Label>
-        <Input value={block.embedUrl || ""} onChange={(v) => u({ embedUrl: v })} placeholder="https://maps.google.com/embed?..." />
-      </FieldGroup>
-      <FieldGroup>
-        <Label>Caption</Label>
+        <Label>Caption (optional)</Label>
         <Input value={block.caption || ""} onChange={(v) => u({ caption: v })} placeholder="Location caption..." />
       </FieldGroup>
-      <p className="text-[11px] text-slate-500">Google Maps integration will be enabled in a future update.</p>
+      <FieldGroup>
+        <Label>Embed URL (Fallback)</Label>
+        <Input value={block.embedUrl || ""} onChange={(v) => u({ embedUrl: v })} placeholder="https://maps.google.com/embed?..." />
+      </FieldGroup>
     </div>
   );
 }
@@ -745,6 +772,177 @@ export function DividerEditor({ block, onChange }: { block: DividerBlock; onChan
         <Label>Label (optional, only shows on line style)</Label>
         <Input value={block.label || ""} onChange={(v) => u({ label: v })} placeholder="Section label..." />
       </FieldGroup>
+    </div>
+  );
+}
+
+// ── Audio Upload Helpers ───────────────────────────────────────
+
+async function uploadAudio(file: File, token: string): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext !== "mp3" && ext !== "wav" && ext !== "m4a") {
+    throw new Error("Unsupported format. Please upload MP3, WAV, or M4A.");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("File size exceeds 10MB limit.");
+  }
+
+  const formData = new FormData();
+  formData.append("image", file); // Must match multer key 'image' expected by the server
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) throw new Error("Upload failed");
+  const data = await res.json();
+  return data.url as string;
+}
+
+function AudioUploader({
+  value,
+  onChange,
+  token,
+  label = "Audio File",
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  token: string;
+  label?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadAudio(file, token);
+      onChange(url);
+    } catch (err: any) {
+      alert(err.message || "Audio upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {value && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-800 text-xs text-slate-300">
+          <span className="text-amber-500">🎵</span>
+          <span className="truncate flex-1 font-mono">{value}</span>
+          <audio src={value} controls className="h-6 w-48 shrink-0 scale-90" />
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/mp4"
+        onChange={handleFile}
+        className="hidden"
+      />
+      <div className="flex gap-2">
+        <Input value={value} onChange={onChange} placeholder="Paste audio URL..." />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          className="px-3 py-2 bg-amber-500/20 text-amber-400 text-xs font-semibold rounded-lg border border-amber-500/30 hover:bg-amber-500/30 disabled:opacity-50 transition-colors whitespace-nowrap"
+        >
+          {uploading ? "Uploading..." : "Upload Audio"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Audio Phrase Editor ────────────────────────────────────────
+
+export function AudioPhraseEditor({
+  block,
+  onChange,
+  token,
+}: {
+  block: AudioPhraseBlock;
+  onChange: (b: AudioPhraseBlock) => void;
+  token: string;
+}) {
+  const u = (patch: Partial<AudioPhraseBlock>) => onChange({ ...block, ...patch });
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <FieldGroup>
+          <Label>Phrase</Label>
+          <Input value={block.phrase} onChange={(v) => u({ phrase: v })} placeholder="e.g. Julley" />
+        </FieldGroup>
+        <FieldGroup>
+          <Label>Translation</Label>
+          <Input value={block.translation} onChange={(v) => u({ translation: v })} placeholder="e.g. Hello" />
+        </FieldGroup>
+      </div>
+      <AudioUploader value={block.audioUrl || ""} onChange={(v) => u({ audioUrl: v })} token={token} />
+      <FieldGroup>
+        <Label>Notes (optional)</Label>
+        <Textarea value={block.note || ""} onChange={(v) => u({ note: v })} placeholder="Optional cultural note..." rows={2} />
+      </FieldGroup>
+    </div>
+  );
+}
+
+// ── Language Guide Editor ───────────────────────────────────────
+
+export function LanguageGuideEditor({
+  block,
+  onChange,
+  token,
+}: {
+  block: LanguageGuideBlock;
+  onChange: (b: LanguageGuideBlock) => void;
+  token: string;
+}) {
+  const u = (patch: Partial<LanguageGuideBlock>) => onChange({ ...block, ...patch });
+  const phrases = block.phrases ?? [];
+
+  const addPhrase = () => u({ phrases: [...phrases, { phrase: "", translation: "", audioUrl: "" }] });
+  const removePhrase = (idx: number) => u({ phrases: phrases.filter((_, i) => i !== idx) });
+  const updatePhrase = (idx: number, patch: Partial<typeof phrases[0]>) => {
+    const next = phrases.map((phr, i) => (i === idx ? { ...phr, ...patch } : phr));
+    u({ phrases: next });
+  };
+
+  return (
+    <div className="space-y-4">
+      <FieldGroup>
+        <Label>Guide Title</Label>
+        <Input value={block.title} onChange={(v) => u({ title: v })} placeholder="e.g. Essential Ladakhi Phrases" />
+      </FieldGroup>
+
+      <div className="space-y-3">
+        {phrases.map((phr, idx) => (
+          <div key={idx} className="border border-slate-800 rounded-xl p-4 space-y-3 bg-slate-900/10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">Phrase {idx + 1}</span>
+              <RemoveButton onClick={() => removePhrase(idx)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldGroup>
+                <Label>Phrase</Label>
+                <Input value={phr.phrase} onChange={(v) => updatePhrase(idx, { phrase: v })} placeholder="e.g. Khamzang In Ley?" />
+              </FieldGroup>
+              <FieldGroup>
+                <Label>Translation</Label>
+                <Input value={phr.translation} onChange={(v) => updatePhrase(idx, { translation: v })} placeholder="e.g. How are you?" />
+              </FieldGroup>
+            </div>
+            <AudioUploader value={phr.audioUrl || ""} onChange={(v) => updatePhrase(idx, { audioUrl: v })} token={token} label="Pronunciation Audio" />
+          </div>
+        ))}
+      </div>
+
+      <AddButton onClick={addPhrase} label="Add Phrase" />
     </div>
   );
 }

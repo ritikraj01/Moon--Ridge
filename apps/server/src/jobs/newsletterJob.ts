@@ -26,7 +26,7 @@ export const generatePDFFromBlogs = async (blogs: any[], title: string, fileName
 
       // Add logo
       try {
-        const logoUrl = `${process.env.WEBSITE_URL || "https://www.moonridgeadventure.com"}/logo.jpeg`;
+        const logoUrl = "https://www.moonridgeadventure.com/logo.jpeg";
         const res = await fetch(logoUrl);
         if (res.ok) {
           const arrayBuffer = await res.arrayBuffer();
@@ -83,8 +83,8 @@ export const generatePDFFromBlogs = async (blogs: any[], title: string, fileName
 };
 
 const generateNewsletterHTML = (blogs: any[], title: string): string => {
-  const logoUrl = `${process.env.WEBSITE_URL || "https://www.moonridgeadventure.com"}/logo.jpeg`;
-  const websiteUrl = process.env.WEBSITE_URL || "https://www.moonridgeadventure.com/";
+  const logoUrl = "https://www.moonridgeadventure.com/logo.jpeg";
+  const websiteUrl = "https://www.moonridgeadventure.com/";
   const packagesUrl = "https://www.moonridgeadventure.com/packages";
   const socialLinks = `
     <a href="#" style="margin: 0 10px; color: #4F46E5;">Facebook</a>

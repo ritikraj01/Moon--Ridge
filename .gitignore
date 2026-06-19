@@ -38,6 +38,8 @@ dist/
 
 # seed files
 apps/server/src/seed.ts
+apps/server/src/seed-locations.ts
+
 
 # debug, temp & cache files
 *.log

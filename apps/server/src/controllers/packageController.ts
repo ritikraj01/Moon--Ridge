@@ -135,8 +135,11 @@ export const deletePackage = async (req: Request, res: Response) => {
 export const uploadImage = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      return res.status(400).json({ message: "No file provided" });
     }
+
+    const isAudio = req.file.mimetype.startsWith("audio/") ||
+                    /\.(mp3|wav|m4a)$/i.test(req.file.originalname);
 
     // Check if Cloudinary credentials are valid
     const isCloudinaryConfigured =
@@ -152,7 +155,10 @@ export const uploadImage = async (req: Request, res: Response) => {
       const uploadStream = () => {
         return new Promise<any>((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { folder: "travel-booking" },
+            { 
+              folder: "travel-booking",
+              resource_type: isAudio ? "video" : "image"
+            },
             (error, result) => {
               if (error) return reject(error);
               resolve(result);
@@ -172,8 +178,9 @@ export const uploadImage = async (req: Request, res: Response) => {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
 
-      const fileExt = path.extname(req.file.originalname) || ".jpg";
-      const filename = `img_${Date.now()}_${Math.round(Math.random() * 1e9)}${fileExt}`;
+      const fileExt = path.extname(req.file.originalname) || (isAudio ? ".mp3" : ".jpg");
+      const prefix = isAudio ? "audio" : "img";
+      const filename = `${prefix}_${Date.now()}_${Math.round(Math.random() * 1e9)}${fileExt}`;
       const filePath = path.join(uploadDir, filename);
 
       fs.writeFileSync(filePath, req.file.buffer);
@@ -184,6 +191,6 @@ export const uploadImage = async (req: Request, res: Response) => {
     }
   } catch (error: any) {
     console.error("Upload error:", error);
-    res.status(500).json({ message: "Image upload failed", error: error.message || error });
+    res.status(500).json({ message: "File upload failed", error: error.message || error });
   }
 };
