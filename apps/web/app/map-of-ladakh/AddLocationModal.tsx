@@ -19,14 +19,14 @@ import { useAuthStore } from "@/lib/authStore";
 import { type LocationCategory } from "./location-data";
 
 const CATEGORIES: { value: LocationCategory; label: string; emoji: string }[] = [
-  { value: "city",      label: "City",      emoji: "🏘️" },
-  { value: "lake",      label: "Lake",      emoji: "🌊" },
-  { value: "pass",      label: "Pass",      emoji: "⛰️" },
+  { value: "city", label: "City", emoji: "🏘️" },
+  { value: "lake", label: "Lake", emoji: "🌊" },
+  { value: "pass", label: "Pass", emoji: "⛰️" },
   { value: "monastery", label: "Monastery", emoji: "🛕" },
-  { value: "valley",    label: "Valley",    emoji: "🏔️" },
-  { value: "school",    label: "School",    emoji: "🏫" },
-  { value: "town",      label: "Town",      emoji: "🏘️" },
-  { value: "permit",    label: "Permit",    emoji: "📄" },
+  { value: "valley", label: "Valley", emoji: "🏔️" },
+  { value: "school", label: "School", emoji: "🏫" },
+  { value: "town", label: "Town", emoji: "🏘️" },
+  { value: "permit", label: "Permit", emoji: "📄" },
 ];
 
 const INITIAL: {
@@ -64,7 +64,8 @@ const INITIAL: {
 };
 
 const parseList = (raw: string) =>
-  raw.split(",").map((s) => s.trim()).filter(Boolean);
+  raw.split("|").map((s) => s.trim()).filter(Boolean);
+
 
 export default function AddLocationModal() {
   const router = useRouter();

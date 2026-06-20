@@ -33,17 +33,15 @@ export default function RootLayout({
 
               {/* Brand */}
               <div className="md:col-span-1">
-                <Link href="/" className="flex items-center gap-3 font-bold text-2xl tracking-tighter text-amber-500 group">
-                  <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-zinc-900/80 border border-amber-500/20 group-hover:border-amber-500/40 p-1.5 transition-all duration-300">
-                    <Image
-                      src="/moonridge-logo.svg"
-                      alt="MoonRidge Logo"
-                      width={32}
-                      height={32}
-                      className="object-contain"
-                    />
-                  </div>
-                  <span>MOON<span className="text-white">RIDGE</span></span>
+                <Link href="/" className="flex items-center gap-1 font-bold text-3xl tracking-tighter text-amber-500 group">
+                  <Image
+                    src="/moonridge-logo.svg"
+                    alt="MoonRidge Logo"
+                    width={48}
+                    height={48}
+                    className="object-contain mb-2.5"
+                  />
+                  <span className="mt-2.9">MOON<span className="text-white">RIDGE</span></span>
                 </Link>
                 <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                   Curated Himalayan escapes and luxury travel experiences crafted for the modern explorer.

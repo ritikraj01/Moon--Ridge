@@ -78,19 +78,15 @@ export default function LoginPage() {
         className="w-full max-w-md p-8 md:p-10 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-10"
       >
         <div className="text-center mb-8 flex flex-col items-center">
-          <Link href="/" className="flex flex-col items-center gap-3.5 mb-6 group">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-950/80 border border-amber-500/20 group-hover:border-amber-500/40 flex items-center justify-center p-2.5 shadow-xl transition-all duration-300">
-              <Image
-                src="/moonridge-logo.svg"
-                alt="MoonRidge Logo"
-                width={56}
-                height={56}
-                className="object-contain animate-pulse-slow"
-              />
-            </div>
-            <span className="font-bold text-3xl tracking-tighter text-amber-500">
-              MOON<span className="text-white">RIDGE</span>
-            </span>
+          <Link href="/" className="flex items-center justify-center gap-1 mb-6 group font-bold text-3xl tracking-tighter text-amber-500">
+            <Image
+              src="/moonridge-logo.svg"
+              alt="MoonRidge Logo"
+              width={48}
+              height={48}
+              className="object-contain mb-2.5 animate-pulse-slow"
+            />
+            <span className="mt-2.9">MOON<span className="text-white">RIDGE</span></span>
           </Link>
           <h1 className="text-2xl font-semibold text-white mb-2">Welcome back</h1>
           <p className="text-zinc-400 text-sm">Log in to your account</p>
