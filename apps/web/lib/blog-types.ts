@@ -63,11 +63,13 @@ export interface VideoBlock {
 export interface TravelInfoTableRow {
   label: string;
   value: string;
+  values?: string[];
 }
 
 export interface TravelInfoTableBlock {
   type: "travelInfoTable";
   title?: string;
+  headers?: string[];
   rows: TravelInfoTableRow[];
 }
 

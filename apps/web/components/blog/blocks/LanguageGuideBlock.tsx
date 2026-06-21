@@ -17,7 +17,7 @@ export default function LanguageGuideBlock({ block }: Props) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5 }}
-      className="my-10 border border-slate-900 bg-slate-950/40 rounded-2xl p-6 md:p-8 space-y-6"
+      className="my-10 border border-slate-900 bg-slate-950/40 rounded-2xl px-6 py-5 md:px-8 md:py-6 space-y-5"
     >
       {block.title && (
         <h3 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3 border-b border-slate-900 pb-4">
@@ -26,7 +26,7 @@ export default function LanguageGuideBlock({ block }: Props) {
         </h3>
       )}
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {block.phrases.map((phrase, idx) => (
           <PhrasePlayButton
             key={idx}

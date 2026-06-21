@@ -47,11 +47,11 @@ export default async function Home() {
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto text-gray-200 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150">
             Experience luxury travel like never before. Handpicked destinations, premium stays, and unforgettable memories.
           </p>
-          <div className="flex gap-4 justify-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
-            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black rounded-full px-8 py-6 text-lg font-semibold transition-all hover:scale-105">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm mx-auto sm:max-w-none animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
+            <Button size="lg" asChild className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-black rounded-full px-8 py-6 text-lg font-semibold transition-all hover:scale-105">
               <Link href="/packages">Explore Packages</Link>
             </Button>
-            <Button size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg font-semibold bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+            <Button size="lg" variant="outline" asChild className="w-full sm:w-auto rounded-full px-8 py-6 text-lg font-semibold bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all hover:scale-105">
               <Link href="/build-trip">Customize Trip</Link>
             </Button>
           </div>

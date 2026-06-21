@@ -6,8 +6,8 @@
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "start": "node dist/index.js",
-    "seed": "ts-node-dev --transpile-only src/seed.ts",
     "seed:locations": "ts-node-dev --transpile-only src/seed-locations.ts",
+    "seed:blogs": "ts-node-dev --transpile-only src/seed-blogs.ts",
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {

@@ -39,6 +39,7 @@ dist/
 # seed files
 apps/server/src/seed.ts
 apps/server/src/seed-locations.ts
+apps/server/src/seed-blog.ts
 
 
 # debug, temp & cache files

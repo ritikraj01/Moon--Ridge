@@ -14,6 +14,7 @@ export function PhrasePlayButton({ phrase, translation, audioUrl, note }: Phrase
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlayPause = () => {
@@ -76,16 +77,32 @@ export function PhrasePlayButton({ phrase, translation, audioUrl, note }: Phrase
   };
 
   useEffect(() => {
+    if (audioUrl) {
+      const tempAudio = new Audio(audioUrl);
+      tempAudio.preload = "metadata";
+      tempAudio.onloadedmetadata = () => {
+        if (tempAudio.duration && tempAudio.duration !== Infinity) {
+          setDuration(tempAudio.duration);
+        }
+      };
+    }
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, []);
+  }, [audioUrl]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   return (
-    <div className="relative overflow-hidden bg-slate-950/80 border border-slate-800 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-amber-500/30 transition-all duration-300 shadow-md">
+    <div className="relative overflow-hidden bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-2.5 md:px-5 md:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-amber-500/30 transition-all duration-300 shadow-md">
       {/* Playback progress bar background */}
       {progress > 0 && (
         <div
@@ -94,19 +111,19 @@ export function PhrasePlayButton({ phrase, translation, audioUrl, note }: Phrase
         />
       )}
 
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Volume2 size={16} className={`text-amber-500 ${isPlaying ? "animate-pulse" : ""}`} />
-          <span className="font-bold text-lg text-white tracking-wide uppercase">{phrase}</span>
+      <div className="flex items-start gap-3">
+        <Volume2 size={18} className={`mt-1 shrink-0 text-amber-500 ${isPlaying ? "animate-pulse" : ""}`} />
+        <div className="space-y-1">
+          <span className="font-bold text-base text-white tracking-wide uppercase block leading-tight">{phrase}</span>
+          <p className="text-sm text-[#d1d5db] font-medium leading-snug">{translation}</p>
+          {note && <p className="text-xs text-slate-500 italic pt-0.5 leading-snug">{note}</p>}
         </div>
-        <p className="text-sm text-slate-300 font-medium">{translation}</p>
-        {note && <p className="text-xs text-slate-500 italic mt-1">{note}</p>}
       </div>
 
       <button
         type="button"
         onClick={handlePlayPause}
-        className={`self-start sm:self-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border transition-all duration-300 min-w-[110px] text-xs font-bold uppercase select-none shadow-sm ${
+        className={`self-start sm:self-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 min-w-[110px] text-xs font-bold uppercase select-none shadow-sm ${
           isPlaying
             ? "bg-amber-500/10 border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
             : "bg-amber-500 text-black border-amber-600 hover:bg-amber-400"
@@ -125,7 +142,7 @@ export function PhrasePlayButton({ phrase, translation, audioUrl, note }: Phrase
         ) : (
           <>
             <Play size={14} fill="currentColor" />
-            <span>Play</span>
+            <span>{duration ? formatTime(duration) : "Play"}</span>
           </>
         )}
       </button>

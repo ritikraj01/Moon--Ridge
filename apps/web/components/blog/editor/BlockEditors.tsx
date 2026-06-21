@@ -468,27 +468,203 @@ export function VideoEditor({ block, onChange }: { block: VideoBlock; onChange: 
 export function TravelInfoTableEditor({ block, onChange }: { block: TravelInfoTableBlock; onChange: (b: TravelInfoTableBlock) => void }) {
   const u = (patch: Partial<TravelInfoTableBlock>) => onChange({ ...block, ...patch });
   const rows = block.rows ?? [];
-  const addRow = () => u({ rows: [...rows, { label: "", value: "" }] });
-  const removeRow = (idx: number) => u({ rows: rows.filter((_, i) => i !== idx) });
-  const updateRow = (idx: number, patch: Partial<typeof rows[0]>) => {
-    const next = rows.map((r, i) => (i === idx ? { ...r, ...patch } : r));
+  const headers = block.headers;
+  const isMultiColumn = Array.isArray(headers);
+
+  const enableMultiColumn = () => {
+    const defaultHeaders = ["Column 1", "Column 2"];
+    const updatedRows = rows.map(r => ({
+      ...r,
+      values: r.values || [r.label || "", r.value || ""]
+    }));
+    u({
+      headers: defaultHeaders,
+      rows: updatedRows
+    });
+  };
+
+  const disableMultiColumn = () => {
+    if (!confirm("Are you sure you want to revert to a standard 2-column table? Extra columns beyond the first two will be lost.")) {
+      return;
+    }
+    const updatedRows = rows.map(r => {
+      const vals = r.values || [];
+      return {
+        label: vals[0] || r.label || "",
+        value: vals[1] || r.value || "",
+        values: undefined
+      };
+    });
+    u({
+      headers: undefined,
+      rows: updatedRows
+    });
+  };
+
+  const addColumn = () => {
+    const currentHeaders = headers || ["Column 1", "Column 2"];
+    const nextHeaders = [...currentHeaders, `Column ${currentHeaders.length + 1}`];
+    const nextRows = rows.map(r => {
+      const currentValues = r.values ? [...r.values] : [r.label, r.value];
+      while (currentValues.length < currentHeaders.length) {
+        currentValues.push("");
+      }
+      return { ...r, values: [...currentValues, ""] };
+    });
+    u({
+      headers: nextHeaders,
+      rows: nextRows
+    });
+  };
+
+  const removeColumn = (colIdx: number) => {
+    if (!headers) return;
+    if (headers.length <= 1) {
+      alert("A table must have at least one column.");
+      return;
+    }
+    const nextHeaders = headers.filter((_, i) => i !== colIdx);
+    const nextRows = rows.map(r => {
+      const currentValues = r.values ? [...r.values] : [r.label, r.value];
+      const nextValues = currentValues.filter((_, i) => i !== colIdx);
+      return { ...r, values: nextValues };
+    });
+    u({
+      headers: nextHeaders,
+      rows: nextRows
+    });
+  };
+
+  const updateHeader = (colIdx: number, val: string) => {
+    if (!headers) return;
+    const nextHeaders = headers.map((h, i) => i === colIdx ? val : h);
+    u({ headers: nextHeaders });
+  };
+
+  const updateRowField = (rowIdx: number, patch: Partial<typeof rows[0]>) => {
+    const next = rows.map((r, i) => (i === rowIdx ? { ...r, ...patch } : r));
     u({ rows: next });
   };
+
+  const updateRowCell = (rowIdx: number, colIdx: number, val: string) => {
+    const nextRows = rows.map((r, i) => {
+      if (i !== rowIdx) return r;
+      const currentValues = [...(r.values || [r.label, r.value])];
+      while (currentValues.length <= colIdx) {
+        currentValues.push("");
+      }
+      currentValues[colIdx] = val;
+      return { ...r, values: currentValues };
+    });
+    u({ rows: nextRows });
+  };
+
+  const addRow = () => {
+    if (isMultiColumn) {
+      const colCount = headers.length;
+      u({
+        rows: [...rows, { label: "", value: "", values: Array(colCount).fill("") }]
+      });
+    } else {
+      u({
+        rows: [...rows, { label: "", value: "" }]
+      });
+    }
+  };
+
+  const removeRow = (idx: number) => u({ rows: rows.filter((_, i) => i !== idx) });
+
   return (
-    <div className="space-y-4">
-      <FieldGroup>
-        <Label>Table Title (optional)</Label>
-        <Input value={block.title || ""} onChange={(v) => u({ title: v })} placeholder="e.g. Trip Details" />
-      </FieldGroup>
-      <div className="space-y-2">
-        {rows.map((row, idx) => (
-          <div key={idx} className="flex gap-2 items-center">
-            <Input value={row.label} onChange={(v) => updateRow(idx, { label: v })} placeholder="Label" />
-            <Input value={row.value} onChange={(v) => updateRow(idx, { value: v })} placeholder="Value" />
-            <RemoveButton onClick={() => removeRow(idx)} />
-          </div>
-        ))}
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+        <div className="flex-1">
+          <FieldGroup>
+            <Label>Table Title (optional)</Label>
+            <Input value={block.title || ""} onChange={(v) => u({ title: v })} placeholder="e.g. Trip Details" />
+          </FieldGroup>
+        </div>
+
+        <div className="sm:self-end">
+          {isMultiColumn ? (
+            <button
+              type="button"
+              onClick={disableMultiColumn}
+              className="text-xs font-semibold text-red-400 hover:text-red-300 px-3 py-2 border border-red-500/20 hover:border-red-500/50 rounded-lg transition-colors whitespace-nowrap"
+            >
+              Revert to 2-Column Mode
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={enableMultiColumn}
+              className="text-xs font-semibold text-amber-400 hover:text-amber-300 px-3 py-2 border border-amber-500/20 hover:border-amber-500/55 rounded-lg transition-colors whitespace-nowrap"
+            >
+              Use Multi-Column Mode
+            </button>
+          )}
+        </div>
       </div>
+
+      {isMultiColumn && (
+        <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-4 space-y-3">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">Column Headers</span>
+          <div className="space-y-2">
+            {headers.map((h, colIdx) => (
+              <div key={colIdx} className="flex gap-2 items-center">
+                <span className="text-xs font-mono text-slate-500 w-6">C{colIdx + 1}</span>
+                <Input value={h} onChange={(v) => updateHeader(colIdx, v)} placeholder={`Column ${colIdx + 1} Header`} />
+                <button
+                  type="button"
+                  onClick={() => removeColumn(colIdx)}
+                  className="p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                  title="Remove Column"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={addColumn}
+            className="flex items-center gap-1.5 text-xs font-semibold text-amber-500 hover:text-amber-400 mt-2"
+          >
+            <Plus size={14} /> Add Column
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block">Table Rows</span>
+        {rows.map((row, rowIdx) => {
+          const vals = row.values || [row.label, row.value];
+          return (
+            <div key={rowIdx} className="flex gap-2 items-start bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
+              <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${isMultiColumn ? headers.length : 2}, minmax(0, 1fr))` }}>
+                {isMultiColumn ? (
+                  headers.map((_, colIdx) => (
+                    <Input
+                      key={colIdx}
+                      value={vals[colIdx] || ""}
+                      onChange={(v) => updateRowCell(rowIdx, colIdx, v)}
+                      placeholder={`Cell ${colIdx + 1}`}
+                    />
+                  ))
+                ) : (
+                  <>
+                    <Input value={row.label} onChange={(v) => updateRowField(rowIdx, { label: v })} placeholder="Label" />
+                    <Input value={row.value} onChange={(v) => updateRowField(rowIdx, { value: v })} placeholder="Value" />
+                  </>
+                )}
+              </div>
+              <div className="pt-1.5 shrink-0">
+                <RemoveButton onClick={() => removeRow(rowIdx)} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <AddButton onClick={addRow} label="Add Row" />
     </div>
   );
